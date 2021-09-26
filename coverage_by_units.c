@@ -71,17 +71,11 @@ int count_occurrences(char *S, int n, int *SA, int *C, int **OCC, char *unit, in
     return(total_cnt);
 }
 
-//#define PRINT_covered
 void compute_sumOccurrences(char *S, int n, int *SA, int *C, int **OCC, int MIN_number_repetitions ){
     
     for(int j=0; j<unit_cnt; j++){
         int cnt = count_occurrences(S, n, SA, C, OCC, Units[j].string, Units[j].len, Units[j].covered, MIN_number_repetitions);
         Units[j].sumOccurrences += cnt;
-        
-        #ifdef PRINT_covered
-        for(int i=0; i<Units[j].len; i++)    printf("%c", Units[j].string[i]);
-        printf("\tlen = %d\tNum Occs = \t%d\n", Units[j].len, Units[j].sumOccurrences);
-        #endif
     }
 }
 
@@ -185,7 +179,7 @@ int cumulative_count(int n, int *tmpCovered, int unitIndex, int MIN_number_repet
     return(cum_cnt);
 }
 
-//#define DEBUG_parsing
+
 #define UNDEFINED -1
 void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
     // Solve the set cover problem in a greedy manner
@@ -269,10 +263,6 @@ void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
         //if(numKeyUnits < tmpCovered[i]) validPrio = 0;
         sprintf(currentRead->RegExpression, "%s%d", currentRead->RegExpression, validPrio);
     }
-    
-#ifdef DEBUG_parsing
-    printf("%s\n", currentRead->RegExpression);
-#endif
 
     free(tmpCovered);
     gettimeofday(&e, NULL);

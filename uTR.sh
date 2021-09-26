@@ -28,10 +28,9 @@ for fastafile in $( ls $inDir/* | grep .fasta$); do
     info=$(awk '$1=="'"$number"'"{print $1,$2,$3,$4,$8}' < "$stat_file")
     head=${info% *}
     string=${info##* }
-    #echo $fastafile $prefix $number $info $head $string
     echo -n $head >> $unit_file # no line breaks
-    #echo $uTR -f $fastafile -u $string  >> $unit_file
-    $uTR -f $fastafile -u $string -o $outDir/${number}_EDDC.fasta -r $MAX_DIS_RATIO -t >> $unit_file 
+    $uTR -f $fastafile -u $string -o $outDir/${number}_EDDC.fasta -r $MAX_DIS_RATIO -t >> $unit_file
+    #$uTR -f $fastafile -u $string -r $MAX_DIS_RATIO -t >> $unit_file
 done
 
 exit 0

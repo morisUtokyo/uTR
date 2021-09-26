@@ -118,9 +118,10 @@ int main(int argc, char *argv[])
                 }
                 put_qualified_read(currentRead, numQualifiedReads);
                 numQualifiedReads++;
-                if(print_EDDC == 1)// Print the focal read
+                if(print_EDDC == 1){// Print the focal read
                     fprintf(ofp, " D=%s\n", currentRead->RegExpression);
-                fprintf(ofp, "%s\n",   currentRead->string);
+                    fprintf(ofp, "%s\n",   currentRead->string);
+                }
                 break;
             }
         }

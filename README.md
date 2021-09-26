@@ -20,7 +20,7 @@ when the input read is:
 
 > AAAGAAAGAAAGAAAGAAAGAAAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAAAGAAAGAAAGGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAA
 
-(166,10,2,MTR,162),B483,read1: 166 shows the length of the centroid read "B483,read1" in the group, 10 is the number of elements in the group, 2 is the number of key units in the centroid read, MTR means that uTR detects mosaic tandem repeats (MTR) in the read, and 162 shows that of 166 bases in the read, 162 are found in mosaic tandem repeats.
+(166,10,2,MTR,162),B483,read1: The first value, 166, shows the length of the centroid read "B483,read1" in the group, 10 is the number of elements in the group, 2 is the number of key units in the centroid read, MTR means that uTR detects mosaic tandem repeats (MTR) in the read, and 162 shows that of 166 bases in the read, 162 are found in mosaic tandem repeats.
 
 S=(1,AAAG,4,112,112),(2,AG,2,50,50) : Each tuple shows a unit. In tuple (1,AAAG,4,112,112), 1 is the identifier of the unit, AAAG is the string of the unit, 4 is the unit length, 112 is the total bases in the unit occurrences (namely, 112/4=28 unit occurrences are found), and the last 112 the total bases in the tandem repeats of the unit.  
 
@@ -29,3 +29,9 @@ D=[1,AAAG,4,24],[2,AG,2,50],[1,AAAG,4,12],G,[1,AAAG,4,76],AAA : The decompositio
 P=11111111111111111111111122222222222222222222222222222222222222222222222222 : Each base is coded by each unit identifier (1,2). 
 
 -t : Output the wall clock time to process each read in the input fasta file.　
+
+cTR outputs a list of tandem repeat haplotypes for each locus. For examples:
+
+> 10321 chr1 14883297 14883426 #haplotypes=54 (166,10,2,MTR,162) (152,8,2,MTR,148) (158,6,2,MTR,154) (162,6,2,MTR,158) (154,5,2,MTR,150)
+
+The first value, 10321, is the identifier of the locus in the human chromosome 1 (chr1) that ranges from 14883297 to 14883426. #haplotypes=54 means that 54 haplotypes are found, and the first haplotype is characterized by (166,10,2,MTR,162), the meaning of which is described above.

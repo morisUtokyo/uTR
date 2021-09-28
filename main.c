@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
             clear_Units_incrementally();
             get_non_self_overlapping_prefixes(currentRead->string);
             coverage_by_units(currentRead->string, MIN_reps);
-            //int numKeyUnits = 0;
+
             if(0 < unit_cnt)
                 set_cover_greedy(ofp, currentRead, MIN_reps);
             int numKeyUnits = currentRead->numKeyUnits;
@@ -103,22 +103,24 @@ int main(int argc, char *argv[])
                         fprintf(ofp, "MTR,");// mosaic tandem repeats
                     else if(MIN_reps == 1)
                         fprintf(ofp, "MR,"); // mosaic repeats
+                    // Print the total number of bases in tandem repeat units
                     fprintf(ofp, "%d),%s S=", currentRead->sumTandem, readID);
                 }
                 // 1-origin index for prio !!!
-                int prevSum = 0;
+                int prevSum = 0; // As Units[j].sumOccurrences is the cumulative sum of bases in all units including the focal unit, to compute the sum of bases in the focal unit, compute the sum of bases in all units before the focal unit.
                 for(int prio=1; prio <= MIN(TOP_k_units, unit_cnt); prio++){
                     for(int j=0; j<unit_cnt; j++)
                         if(prio == Units[j].prio){  // Note that 1 <= Units[j].prio
                             put_into_GlobalUnits(Units[j].string);
                             if(print_EDDC == 1)
                                 fprintf(ofp, "(%d,%s,%d,%d,%d),", prio, Units[j].string, Units[j].len,  Units[j].sumOccurrences - prevSum, Units[j].sumTandem);
+                            // Units[j].sumOccurrences - prevSum is the sum of bases in all units before the focal unit.
                             prevSum = Units[j].sumOccurrences;
                         }
                 }
                 put_qualified_read(currentRead, numQualifiedReads);
                 numQualifiedReads++;
-                if(print_EDDC == 1){// Print the focal read
+                if(print_EDDC == 1){    // Print the focal read
                     fprintf(ofp, " D=%s\n", currentRead->RegExpression);
                     fprintf(ofp, "%s\n",   currentRead->string);
                 }
@@ -130,8 +132,10 @@ int main(int argc, char *argv[])
         printf(" #haplotypes=%d ", numQualifiedReads);
         for(int i=0; i<numQualifiedReads; i++){
             printf("(%d,%d,%d,", Qreads[i].len, Qreads[i].numReads, Qreads[i].numKeyUnits);
-            if(Qreads[i].mosaic_mode == Mosaic_tandem_repeat) printf("MTR,");
-            else printf("MR,");
+            if(Qreads[i].mosaic_mode == Mosaic_tandem_repeat)
+                printf("MTR,");
+            else
+                printf("MR,");
             printf("%d) ", Qreads[i].sumTandem);
         }
         printf("#units=%d ", global_unit_cnt);

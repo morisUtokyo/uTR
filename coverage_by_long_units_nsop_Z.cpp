@@ -28,8 +28,6 @@ public:
 		end_y	= y1;
 		initial_score	= s;
 		score	= s;
-		//name	= new char[n1.length()];
-		//name	= n1;
 		predecessor	= 0;
 	}
 	void print()const{
@@ -47,10 +45,10 @@ public:
             if(S[x] == unit[ y % unitLen ]){
                 x++, y++, score++;  // Half-open intervals
             }else{
-                // The number of mistamtches must be smaller than
-                // maxMismatches = ceil(unitLen * MAX_DIS_RATIO);
                 numMismatches++;
-                if(numMismatches > maxMismatches) break; else{x++, y++;}
+                if(numMismatches > maxMismatches) // If the number of mismatches exceed the threshold, stop extension.
+                    break;
+                else{x++, y++;}
             }
             // Update the ends if the length is unitLen or more.
             if(unitLen <= x - end_x){
@@ -65,9 +63,9 @@ public:
             if(numMismatches <= maxMismatches){
                 end_x = x; end_y = y;
             }
-            for(x=start_x, y=start_y; x<end_x; x++, y++)
-                // Removal of the if statement fills mismatches in a partial mismatch of the unit
-                if( S[x] == unit[ y % unitLen] ) covered[x] = 1;
+            for(x=start_x, y=start_y; x<end_x; x++, y++) // Removal of the if statement fills mismatches in a partial mismatch of the unit, which is not implemented, but we show mismatches between the unit and read explicitly.
+                if( S[x] == unit[ y % unitLen] )
+                    covered[x] = 1;
             return(true);
         }else
             return(false);

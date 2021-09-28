@@ -138,41 +138,55 @@ void coverage_by_units(char *S, int MIN_number_repetitions){
 
 int cumulative_count(int n, int *tmpCovered, int unitIndex, int MIN_number_repetitions, int prio)
 {
+    // Enter chech_state=1 when the focal unit stops covering bases; namely,
+    // case 1) we reach the end of reads
+    // case 2) the focal base is suddenly covered by the other key units, but the previous is not.
+    // case 3) The unit covers the focal base but does not match it and the number of mismatches in the current run, mismatch_run exceeds a threshold.
+    // Otherwise, the unit covers the focal base, and we tries to extend the coverage.
+    
     int run, check_state, mismatches, cum_cnt, mismatch_run, tandem_cnt;
     run = check_state = mismatches = cum_cnt = mismatch_run = tandem_cnt = 0;
     for(int i=0; i<=n; i++){
         check_state = 0;
-        if(i == n)  // Terminate and process the remaining run
+        if(i == n)  // case 1: Terminate and process the remaining run
             check_state = 1;
         else if(tmpCovered[i] > 0){ // Already covered by other units
             cum_cnt++;
-            if(0 < run) check_state = 1;
+            if(0 < run) check_state = 1;    // case 2
+            else check_state = 0;   // The base has been covered by the other units.
         }else if(Units[unitIndex].covered[i] == 0){
-            // The unit covers the focal base but does not match it.
+            // case 3: The unit covers the focal base but does not match it.
             run++;  mismatches++; mismatch_run++;
             // Check when the number of mistamtches, mismatch_run,
             // exceeds ceil(Units[unitIndex].len * MAX_DIS_RATIO)
-            if(floor(run * MAX_DIS_RATIO) < mismatches || ceil(Units[unitIndex].len * MAX_DIS_RATIO) <= mismatch_run)
-            {   check_state = 1; mismatch_run = 0;  }
-        }else   // The unit covers and matches the unit.
+            if(floor(run * MAX_DIS_RATIO) < mismatches ||
+               ceil(Units[unitIndex].len * MAX_DIS_RATIO) <= mismatch_run){
+                check_state = 1; mismatch_run = 0;
+            }else check_state = 0;  // Continue the unit coverage extension.
+        }else // The unit covers and matches the unit. Continue the unit coverage extension.
             run++;
         if(check_state == 1){
-            // MIN_number_repetitions is either 2(MTR) or 1(MR) and 2(MTR) is examined first
-            if((Units[unitIndex].len *MIN_number_repetitions) <= run){
+            // MIN_number_repetitions is either 2(MTR) or 1(MR), and 2(MTR) is examined first.
+            if((Units[unitIndex].len * MIN_number_repetitions) <= run){
+                // If the run of matches is qualified,
+                // add the number of matches to the cumulative count, cum_cnt, and
+                // memorize that matches are covered by the unit with priority "prio."
                 cum_cnt += (run - mismatches);
                 if(0 < prio){
+                // The unit is an optimal one if prio is positive.
+                // prio is set to 0 when we test whether the unit is optimal one or not.
                     for(int k=1; k <= run; k++)
                         if(Units[unitIndex].covered[i-k] == 1)
                             tmpCovered[i-k] = prio;
                 }
-                // Calculate the total length of tandem units; 2(MTR)
+                // Calculate the total length of tandem units, 2(MTR), and add the number of matches in the tandem units to tandem_cnt.
                 if( (Units[unitIndex].len * 2) <= run)
                     tandem_cnt += (run - mismatches);
             }
-            run = mismatches = 0;
+            run = mismatches = 0;   // Reset the run.
         }
     }
-    if(0 < prio){
+    if(0 < prio){   // The unit is an optimal one if prio is positive.
         Units[unitIndex].sumOccurrences = cum_cnt;
         Units[unitIndex].sumTandem = tandem_cnt;
     }
@@ -201,6 +215,7 @@ void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
     int prio2unit[TOP_k_units+1];
     // 1-origin index. Filled from prio2unit[1]
     for(int prio=1; prio <= TOP_k_units; prio++){
+        // Compute an optimal unit that minimizes the penalty.
         int min_penalty_unit = UNDEFINED;
         for(int j=0; j<unit_cnt; j++){
             if(Units[j].prio == UNDEFINED){
@@ -214,15 +229,15 @@ void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
                     min_penalty_unit = j; }
             }
         }
-        // An optimal unit was computed.
+        // After computing an optimal unit that minimizes the penalty.
         if(min_penalty_unit != UNDEFINED){
             Units[min_penalty_unit].prio = prio;
             prio2unit[prio] = min_penalty_unit;
             // Setting the last arg to prio(>0) updates tmpCovered and sumOccurrences of the optimal unit
             int cum_min_penalty_unit = cumulative_count(n, tmpCovered, min_penalty_unit, MIN_number_repetitions, prio);
             sumTandem += Units[min_penalty_unit].sumTandem;
-            if(MIN_unit_occupancy_ratio * n <= cum_min_penalty_unit && fixed == 0)
-            {
+            // The last argument prio is set to 0 when we test whether the unit is optimal one or not.
+            if(MIN_unit_occupancy_ratio * n <= cum_min_penalty_unit && fixed == 0){
                 numKeyUnits = prio;  // i is the 1-origin indexing !
                 fixed = 1;
                 currentRead->sumTandem = sumTandem;
@@ -240,8 +255,10 @@ void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
                     sprintf(currentRead->RegExpression, "%s%c", currentRead->RegExpression, S[j]);
             }else{
                 if(Units[prio2unit[prevPrio]].len < run){
+                    // Use a pair of square brackets for representing tandem repeat units
                     sprintf(currentRead->RegExpression, "%s[%d,%s,%d,%d]", currentRead->RegExpression, prevPrio, Units[prio2unit[prevPrio]].string, Units[prio2unit[prevPrio]].len, run);
                 }else{
+                    // Use a pair of parentheses for representing non-tandem repeat units
                     sprintf(currentRead->RegExpression, "%s(%d,", currentRead->RegExpression, prevPrio);
                     for(int j=i-run; j<i; j++)
                         sprintf(currentRead->RegExpression, "%s%c", currentRead->RegExpression, S[j]);

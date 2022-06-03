@@ -2,9 +2,9 @@
 Detect key Units in mosaic Tandem Repeats from representative reads at the same locus.
 
 ## Usage
-uTR [-f input fasta file] [-u representative unit] [-r threshold] [-o output fasta file] [-t]
+uTR [-f input fasta file] [-u input representative unit string] [-h input haplotype file] [-i output table file] [-r maximum discrepancy ratio] [-o output fasta file with decomposition] [-tsd]
 
--f : Use a smaller input fasta file to reduce the computation time. The users are asked to use cTR (https://github.com/morisUtokyo/cTR) to cluster reads collected from individuals to unique representative reads. Afterwards, use this tool to retrieve key units from representative reads. The program cTR outputs the following information to the annotation of the representative read of each group, and uTR feeds the information. See the details of parameters in  https://github.com/morisUtokyo/cTR#readme.
+-f : Use a smaller input fasta file to reduce the computation time. The users are asked to use cTR (https://github.com/morisUtokyo/cTR) to cluster reads collected from individuals to unique representative reads. Afterwards, use this tool to retrieve decompositions from representative reads. The program cTR outputs the following information to the annotation of the representative read of each group, and uTR feeds the information. See the details of parameters in  https://github.com/morisUtokyo/cTR#readme.
 > \>GroupSize = N, Diameter = D, RadiusFromCentroid = R, CentroidReadName = ID, CentroidReadLength = L
 
 -u : Input a single representative unit of a putative tandem repeat in the input read, which can be computed by using mTR (https://github.com/morisUtokyo/mTR). If it is not specified, uTR automatically estimates tandem repeat units; however, mTR is better at predicting longer units than uTR (see the results in https://academic.oup.com/bioinformatics/article/37/5/612/5919583). 
@@ -12,7 +12,7 @@ uTR [-f input fasta file] [-u representative unit] [-r threshold] [-o output fas
 -r : Give a maximum threshold on the mismatch ratio between the representaitve unit and a tandem repeat of the unit. No tandem repeat is output if the mismatch ratio exceeds this threshold. The default parameter is 0.3, which is set by:
 > #define MAX_DIS_RATIO_DEFAULT 0.3 in uTR.h
 
--o : uTR outputs the given input fasta file with a list of units identified in the reads. It also adds information, for example:
+-o : uTR outputs the given input fasta file annotated with decompositions identified in the reads. It also adds information, for example:
 
 > \> (166,10,2,MTR,162),B483,read1, S=(1,AAAG,4,112,112),(2,AG,2,50,50), D=[1,AAAG,4,24],[2,AG,2,50],[1,AAAG,4,12],G,[1,AAAG,4,76],AAA, P=1111111111111111111111112222222222222222222222222222222222222222222222222211111111111101111111111111111111111111111111111111111111111111111111111111111111111111111000
 

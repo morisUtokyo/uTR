@@ -1,5 +1,5 @@
 PROGRAM = uTR
-OBJS	= main.o handle_one_file.o SAIS.o coverage_by_units.o units.o coverage_by_long_units_nsop_Z.o
+OBJS	= main.o handle_one_file.o SAIS.o coverage_by_units.o units.o coverage_by_long_units_nsop_Z.o string_decomposer.o
 CC	= gcc
 CPP	= g++
 CFLAGS	= -std=c99 -fPIC -fcommon

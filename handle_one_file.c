@@ -36,9 +36,6 @@
 
 //#define DEBUG_feed
 
-
-
-
 void clear_Units_incrementally(){
     for(int i=0; i<unit_cnt; i++){
         Units[i].sumOccurrences = 0;
@@ -47,64 +44,49 @@ void clear_Units_incrementally(){
     }
 }
 
-void free_Units(){
-    for(int i=0; i<MAX_NUMBER_UNITS; i++){
-        if(Units[i].string != NULL) free(Units[i].string);
-        if(Units[i].covered!= NULL) free(Units[i].covered);
-    }
-    if(Units != NULL) free(Units);
-    #ifdef DEBUG_feed
-    fprintf(stderr, "Succeeded in free (handle_one_file.c)\n");
-    #endif
-}
-
 void malloc_Units(){
     unit_cnt = 0;
+    
     Units = (Unit *) malloc( sizeof(Unit) * MAX_NUMBER_UNITS);
     if(Units == NULL) exit(EXIT_FAILURE);
     for(int i=0; i<MAX_NUMBER_UNITS; i++)
         Units[i].sumOccurrences = 0;
-    for(int i=0; i<MAX_NUMBER_UNITS; i++){
-        Units[i].string = malloc( sizeof(char) * MAX_UNIT_LENGTH );
-        if(Units[i].string == NULL){ free_Units(); exit(EXIT_FAILURE); }
-        Units[i].covered = malloc( sizeof(int) * MAX_READ_LENGTH );
-        if(Units[i].covered == NULL){ free_Units(); exit(EXIT_FAILURE); }
-    }
+    
+    keyUnits = (Unit *) malloc( sizeof(Unit) * TOP_k_units);
+    if(keyUnits == NULL)
+    { fprintf(stderr, "Failure to malloc keyUnits(=%d)\n", TOP_k_units); exit(EXIT_FAILURE); }
+    
     Qreads = (QualifiedRead *) malloc( sizeof(QualifiedRead) * MAX_NUMBER_READS);
     if(Qreads == NULL) exit(EXIT_FAILURE);
     #ifdef DEBUG_feed
     fprintf(stderr, "Succeeded in malooc (handle_one_file.c)\n");
     #endif
 }
-
-void free_GlobalUnits(){
-    free(nextReadID);
-    for(int i=0; i<MAX_NUMBER_UNITS; i++){
-        if(GlobalUnits[i].string != NULL) free(GlobalUnits[i].string);
-    }
-    if(GlobalUnits != NULL) free(GlobalUnits);
-    #ifdef DEBUG_feed
-    fprintf(stderr, "Succeeded in free (handle_one_file.c)\n");
-    #endif
+void free_Units(){
+    if(Units != NULL) free(Units);
+    if(keyUnits != NULL) free(keyUnits);
 }
 
-void malloc_GlobalUnits(){
+void malloc_GlobalVars(){
+    WrapDP = malloc( sizeof(int) * WrapDPsize );
+    if(WrapDP == NULL) exit(EXIT_FAILURE);
+    
     nextReadID = malloc( sizeof(char) * (MAX_ID_LENGTH+1) );
+    if(nextReadID == NULL) exit(EXIT_FAILURE);
+    
     global_unit_cnt = 0;
-    GlobalUnits = (Unit *) malloc( sizeof(Unit) * MAX_NUMBER_UNITS);
+    GlobalUnits =
+        (Unit *) malloc( sizeof(Unit) * MAX_NUMBER_GLOBAL_UNITS);
     if(GlobalUnits == NULL) exit(EXIT_FAILURE);
-    for(int i=0; i<MAX_NUMBER_UNITS; i++)
+    for(int i=0; i<MAX_NUMBER_GLOBAL_UNITS; i++)
         GlobalUnits[i].sumOccurrences = 0;
-    for(int i=0; i<MAX_NUMBER_UNITS; i++){
-        GlobalUnits[i].string = malloc( sizeof(char) * MAX_UNIT_LENGTH );
-        if(GlobalUnits[i].string == NULL){
-            free_Units(); exit(EXIT_FAILURE);
-        }
-    }
-    #ifdef DEBUG_feed
-    fprintf(stderr, "Succeeded in malooc (handle_one_file.c)\n");
-    #endif
 }
+void free_GlobalVars(){
+    free(WrapDP);
+    free(nextReadID);
+    if(GlobalUnits != NULL) free(GlobalUnits);
+}
+
 
 char capitalize(char c){
     char charCode;
@@ -139,7 +121,7 @@ FILE* init_handle_one_file(char *inputFile){
 }
 
 void return_one_read(FILE *fp, Read *currentRead){
-    char *s = (char *)malloc(sizeof(char)*BLK);
+    char s[BLK+1];
     int i;
     char charCode;
     int cnt=0;
@@ -152,7 +134,7 @@ void return_one_read(FILE *fp, Read *currentRead){
             if(read_cnt == -1){ // This is the first read
                 read_cnt = 0;
                 // Feed the ID of the current read into the ID of nextRead
-                for(i=1; s[i]!='\0' && s[i]!='\n' && i<MAX_ID_LENGTH; i++)
+                for(i=1; s[i]!='\0' && s[i]!='\n' && i<BLK; i++)
                     nextReadID[i-1] = s[i];
                 nextReadID[i-1] = '\0';
                 // Move on to feed the current string
@@ -170,13 +152,15 @@ void return_one_read(FILE *fp, Read *currentRead){
                 currentRead->string[cnt] = '\0';
                 currentRead->len = cnt;
                 read_cnt++;
-                free(s);
+                //free(s);
                 return;
             }
         }else{
             // Feed the string            
-            for(i=0; s[i]!='\0' && s[i]!='\n' && s[i]!='\r'; i++){
-                currentRead->string[cnt++] = capitalize(s[i]);
+            for(i=0; s[i]!='\0' && s[i]!='\n' && s[i]!='\r' && i<BLK; i++){
+                currentRead->string[cnt] = capitalize(s[i]);
+                currentRead->intString[cnt] = char2int(capitalize(s[i]));
+                cnt++;
                 if( MAX_READ_LENGTH <= cnt){
                     fprintf(stderr, "fatal error: The length %d is tentatively at most %i.\nread ID = %s\nSet MAX_READ_LENGTH to a larger value", cnt, MAX_READ_LENGTH, currentRead->ID);
                     free_Units();
@@ -185,7 +169,7 @@ void return_one_read(FILE *fp, Read *currentRead){
             }
         }
     }
-    free(s);
+    //free(s);
     if(no_read == 1){  // No reads
         currentRead->len = 0;
     }else{

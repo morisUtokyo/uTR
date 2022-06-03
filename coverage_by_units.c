@@ -87,7 +87,7 @@ void coverage_by_units(char *S, int MIN_number_repetitions){
     n++;    // For building SA. The last letter of S is terminal symbol $
     
     unsigned char *Sint  = (unsigned char *)malloc(sizeof(unsigned char) * n);
-    if(Sint == NULL)  exit(EXIT_FAILURE);
+    if(Sint == NULL) { fprintf(stderr, "Failure to malloc Sint\n"); exit(EXIT_FAILURE); }
     
     // We encode $,A,C,G,T by 0,1,2,3,4 so that $=0<A=1<C=2<G=3<T=4
     for(int i=0; i<=(n-2); i++)
@@ -95,20 +95,20 @@ void coverage_by_units(char *S, int MIN_number_repetitions){
     Sint[n-1] = 0; // The last character must be $.
     
     int *SA = (int *)malloc(sizeof(int)*n);
-    if(SA == NULL){ exit(EXIT_FAILURE); }
+    if(SA == NULL){ fprintf(stderr, "Failure to malloc SA\n"); exit(EXIT_FAILURE); }
     int K = 4;
     SA_IS(Sint, SA, n, K, sizeof(unsigned char));
     
     int *BWT = (int *)malloc(sizeof(int) * n);
-    if(BWT == NULL){ exit(EXIT_FAILURE); }
+    if(BWT == NULL){ fprintf(stderr, "Failure to malloc BWA\n"); exit(EXIT_FAILURE); }
     
     int **OCC = malloc(sizeof(int *) * (K+1));
-    if(OCC == NULL){ exit(EXIT_FAILURE); }
+    if(OCC == NULL){ fprintf(stderr, "Failure to malloc OCC\n"); exit(EXIT_FAILURE); }
     
     int C0[5] = {0,0,0,0,0};
     for(int j=1; j <= K; j++){
         OCC[j] = malloc(sizeof(int) * n);
-        if(OCC[j] == NULL){ exit(EXIT_FAILURE); }
+        if(OCC[j] == NULL){ fprintf(stderr, "Failure to malloc OCC[j]\n"); exit(EXIT_FAILURE); }
         OCC[j][0] = 0;
     }
     for(int i=0; i<n; i++){
@@ -173,8 +173,9 @@ int cumulative_count(int n, int *tmpCovered, int unitIndex, int MIN_number_repet
                 // memorize that matches are covered by the unit with priority "prio."
                 cum_cnt += (run - mismatches);
                 if(0 < prio){
-                // The unit is an optimal one if prio is positive.
-                // prio is set to 0 when we test whether the unit is optimal one or not.
+                //if(0 <= prio){
+                // The unit is an optimal one if prio is non-negative.
+                // prio is set to -1 when we test whether the unit is optimal one or not.
                     for(int k=1; k <= run; k++)
                         if(Units[unitIndex].covered[i-k] == 1)
                             tmpCovered[i-k] = prio;
@@ -187,104 +188,173 @@ int cumulative_count(int n, int *tmpCovered, int unitIndex, int MIN_number_repet
         }
     }
     if(0 < prio){   // The unit is an optimal one if prio is positive.
+    //if(0 <= prio){   // The unit is an optimal one if prio is non-negative.
         Units[unitIndex].sumOccurrences = cum_cnt;
         Units[unitIndex].sumTandem = tandem_cnt;
     }
     return(cum_cnt);
 }
 
+int partition(int* target, int* Pos, int left, int right) {
+    // Generate a random number, genrand_int32(), using the the Mersenne Twister.
+    // int random = left + genrand_int32() % (right - left + 1);
+    int random = left + rand() % (right - left + 1);
+    // Exchange target[right] and target[random].
+    int tmp;
+    tmp = target[right]; target[right] = target[random]; target[random] = tmp;
+    tmp = Pos[right];    Pos[right] = Pos[random];       Pos[random] = tmp;
+    int pivot = target[right];
+    int i = left-1; // i scans the array from the left.
+    int j = right;  // j scans the array from the right.
+    for (;;) {
+        // Move from the left until hitting a value no less than the pivot.
+        for(i++; target[i] < pivot; i++){}
+        // Move from the right until hitting a value no greater than the pivot.
+        for(j--; pivot < target[j] && i < j; j--){}
+        if (i >= j)  break;
+        // Exchange target[i] and target[j].
+        tmp = target[i];  target[i] = target[j];  target[j] = tmp;
+        tmp = Pos[i];     Pos[i]    = Pos[j];     Pos[j] = tmp;
+    }
+    // Exchange target[i] and target[right].
+    tmp = target[i];  target[i] = target[right];  target[right] = tmp;
+    tmp = Pos[i];     Pos[i]    = Pos[right];     Pos[right] = tmp;
+    return i;
+}
 
-#define UNDEFINED -1
+void randomQuickSort3(int* target, int* Pos, int aLeft, int aRight) {
+    int left = aLeft; int right = aRight;
+    while (left < right) {
+        int i = partition(target, Pos, left, right);
+        if( i - left <= right - i ){ // The left interval is shorter.
+            randomQuickSort3(target, Pos, left, i-1);
+            left=i+1;
+        }else{                       // The right interval is shorter.
+            randomQuickSort3(target, Pos, i+1, right);
+            right=i-1;
+        }
+    }
+}
+
+//#define DEBUG_batch_selection
+int unit_selection(int string_len, int *prio2unit, int MIN_number_repetitions){
+    //int tmpCovered[MAX_READ_LENGTH+1];
+    int *tmpCovered = (int *) malloc(sizeof(int)*(string_len+1));
+    for(int i=0; i<string_len+1; i++) tmpCovered[i] = 0;
+    int *listPenalty = (int *) malloc(sizeof(int)*unit_cnt);
+    int *listUnitInd = (int *) malloc(sizeof(int)*unit_cnt);
+    for(int j=0; j<unit_cnt; j++){
+        //Setting the last arg to 0 untouches tmpCovered
+        int cum_cnt = cumulative_count(string_len, tmpCovered, j, MIN_number_repetitions, 0);
+        int penalty = Units[j].len + (int)(cum_cnt / Units[j].len) + (string_len - cum_cnt);
+        Units[j].penalty = penalty;
+        listPenalty[j]   = penalty;
+        listUnitInd[j]   = j;
+    }
+    randomQuickSort3(listPenalty, listUnitInd, 0, unit_cnt-1); // Sort units according to tentative penalty
+    #ifdef  DEBUG_batch_selection
+    for(int p=0; p<TOP_k_units; p++)
+        fprintf(stderr, "%d\t%s\n", listPenalty[p], Units[listUnitInd[p]].string);
+    fprintf(stderr, "\n");
+    #endif
+
+    // greedy selection of units
+    MIN_number_repetitions = 1;
+    int k = MIN(TOP_k_units, unit_cnt);
+    for(int i=0; i<string_len+1; i++) tmpCovered[i] = 0; // Initialize tmpCovered
+    int prev_cum_cnt = 0; // max of cumulative count
+    int min_penalty = string_len;
+    int numKeyUnits=0;
+    for(int prio=0; prio<k; prio++){ // 0-origin
+        // Compute an optimal unit that minimizes the penalty.
+        int min_penalty_unit = UNDEFINED;
+        for(int j=0; j<k; j++){
+            int unitIndex = listUnitInd[j];
+            if(Units[unitIndex].prio == UNDEFINED){
+                //Setting the last arg to 0 untouches tmpCovered
+                int tmp_cum_cnt = cumulative_count(string_len, tmpCovered, unitIndex, MIN_number_repetitions, 0);
+                int tmp_penalty = min_penalty + (Units[unitIndex].len + (tmp_cum_cnt - prev_cum_cnt) / Units[unitIndex].len) - (tmp_cum_cnt - prev_cum_cnt); // The second is the penalty of the tentatively added unit, and the last is the decrease of uncovered bases by the added unit
+                #ifdef  DEBUG_batch_selection
+                fprintf(stderr, "%d\t%d\t%s\n", min_penalty, tmp_penalty, Units[unitIndex].string);
+                #endif
+                if(tmp_penalty <= min_penalty){ // Include two occurrences of a 2bp unit
+                    min_penalty = tmp_penalty;
+                    prev_cum_cnt = tmp_cum_cnt;
+                    min_penalty_unit = unitIndex;
+                }
+            }
+        }
+
+        // After computing an optimal unit that minimizes the penalty.
+        if(min_penalty_unit == UNDEFINED) // No units with the min penalty
+            break;
+        else{
+            #ifdef  DEBUG_batch_selection
+            fprintf(stderr, "---min_penalty\t\t%d\t%s\n", min_penalty, Units[min_penalty_unit].string);
+            #endif
+            Units[min_penalty_unit].prio = prio;
+            prio2unit[prio] = min_penalty_unit; // Setting the last arg to prio(>=0) updates tmpCovered and sumOccurrences of the optimal unit. The last argument prio is set to -1 when we test whether the unit is optimal one or not.
+            cumulative_count(string_len, tmpCovered, min_penalty_unit, MIN_number_repetitions, prio+1);
+            numKeyUnits = prio+1;  // i is the 0-origin indexing
+        }
+    }
+    free(tmpCovered);
+    free(listPenalty);
+    free(listUnitInd);
+    return(numKeyUnits);
+}
+
 void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
     // Solve the set cover problem in a greedy manner
     struct timeval s, e;    gettimeofday(&s, NULL);
     
-    char *S = currentRead->string;
-    int n;  for(n=0; S[n]!='\0'; n++){} // n is the length of S.
-    
-    int *tmpCovered = (int *)malloc( sizeof(int) * (n+1) );
-    if(tmpCovered == NULL){ exit(EXIT_FAILURE); }
-    for(int i=0; i<n; i++) tmpCovered[i] = 0;
-    int numKeyUnits = -1;
-    int fixed = 0;
-    int prev_cum_cnt = 0; // max of cumulative count
-    int min_penalty = n;
-    int sumTandem = 0;
-    
     for(int j=0; j<unit_cnt; j++) Units[j].prio = UNDEFINED;
     int prio2unit[TOP_k_units+1];
-    // 1-origin index. Filled from prio2unit[1]
-    for(int prio=1; prio <= TOP_k_units; prio++){
-        // Compute an optimal unit that minimizes the penalty.
-        int min_penalty_unit = UNDEFINED;
-        for(int j=0; j<unit_cnt; j++){
-            if(Units[j].prio == UNDEFINED){
-                // Setting the last arg to 0 untouches tmpCovered
-                int tmp_cum_cnt = cumulative_count(n, tmpCovered, j, MIN_number_repetitions, 0);
-                int tmp_penalty = (min_penalty - (n - prev_cum_cnt)) + (Units[j].len + (tmp_cum_cnt - prev_cum_cnt) / Units[j].len) + (n - tmp_cum_cnt);
-                // cumulative count of the j-th unit
-                if(tmp_penalty < min_penalty){
-                    min_penalty = tmp_penalty;
-                    prev_cum_cnt = tmp_cum_cnt;
-                    min_penalty_unit = j; }
-            }
-        }
-        // After computing an optimal unit that minimizes the penalty.
-        if(min_penalty_unit != UNDEFINED){
-            Units[min_penalty_unit].prio = prio;
-            prio2unit[prio] = min_penalty_unit;
-            // Setting the last arg to prio(>0) updates tmpCovered and sumOccurrences of the optimal unit
-            int cum_min_penalty_unit = cumulative_count(n, tmpCovered, min_penalty_unit, MIN_number_repetitions, prio);
-            sumTandem += Units[min_penalty_unit].sumTandem;
-            // The last argument prio is set to 0 when we test whether the unit is optimal one or not.
-            if(MIN_unit_occupancy_ratio * n <= cum_min_penalty_unit && fixed == 0){
-                numKeyUnits = prio;  // i is the 1-origin indexing !
-                fixed = 1;
-                currentRead->sumTandem = sumTandem;
-            }
-        }else
-            break;
-    }
-    sprintf(currentRead->RegExpression, "");
-    int run = 0;
-    int prevPrio = tmpCovered[0];
-    for(int i=0; i<=n; i++){
-        if(prevPrio != tmpCovered[i] || i == n){
-            if(prevPrio == 0){
-                for(int j=i-run; j<i; j++)
-                    sprintf(currentRead->RegExpression, "%s%c", currentRead->RegExpression, S[j]);
-            }else{
-                if(Units[prio2unit[prevPrio]].len < run){
-                    // Use a pair of square brackets for representing tandem repeat units
-                    sprintf(currentRead->RegExpression, "%s[%d,%s,%d,%d]", currentRead->RegExpression, prevPrio, Units[prio2unit[prevPrio]].string, Units[prio2unit[prevPrio]].len, run);
-                }else{
-                    // Use a pair of parentheses for representing non-tandem repeat units
-                    sprintf(currentRead->RegExpression, "%s(%d,", currentRead->RegExpression, prevPrio);
-                    for(int j=i-run; j<i; j++)
-                        sprintf(currentRead->RegExpression, "%s%c", currentRead->RegExpression, S[j]);
-                    sprintf(currentRead->RegExpression, "%s,%d,%d)",  currentRead->RegExpression, Units[prio2unit[prevPrio]].len, run);
-                }
-            }
-            if(i < n)
-                sprintf(currentRead->RegExpression, "%s,", currentRead->RegExpression);
-            run = 1;
-            prevPrio = tmpCovered[i];
-        }else
-            run++;
-    }
-    // add the list of prios of all nucleotides
-    sprintf(currentRead->RegExpression, "%s, P=", currentRead->RegExpression);
-    for(int i=0; i<n; i++){
-        int validPrio = tmpCovered[i];
-        // Print all prios
-        //if(numKeyUnits < tmpCovered[i]) validPrio = 0;
-        sprintf(currentRead->RegExpression, "%s%d", currentRead->RegExpression, validPrio);
-    }
+    int n;  for(n=0; currentRead->string[n]!='\0'; n++){} // n is the length of the string.
 
-    free(tmpCovered);
+    int numKeyUnits;
+    numKeyUnits = unit_selection(n, prio2unit, MIN_number_repetitions);
+    
+    // Call string decomposer, Copy key units to allocated arrays
+    currentRead->numKeyUnits = numKeyUnits;
+    if(numKeyUnits == 0) return;
+    
+    for(int p=0; p<numKeyUnits; p++){
+        int len;
+        int j = prio2unit[p]; // 0 origin inxexing
+        for(len=0; Units[j].string[len] != '\0'; len++){
+            keyUnits[p].intString[len] = char2int(Units[j].string[len]);
+            keyUnits[p].string[len]    = Units[j].string[len];
+        }
+        keyUnits[p].len = len;
+    }
+    string_decomposer(currentRead, keyUnits, numKeyUnits, prio2unit);
+    
+    // Revise priority
+    int sumOcc[TOP_k_units];
+    for(int p=0; p<numKeyUnits; p++)
+        sumOcc[p] = Units[prio2unit[p]].sumOccurrences;
+    randomQuickSort3(sumOcc, prio2unit, 0, numKeyUnits-1);
+
+    char decomposition[MAX_READ_LENGTH];
+    sprintf(decomposition, "");
+    int total_valid_units = 0;
+    for(int p=numKeyUnits-1; 0<=p; p--){
+        // sumOcc and prio2unit are sorted in an ascending order
+        if(0 < sumOcc[p]){
+            Unit focalUnit = Units[prio2unit[p]];
+            focalUnit.prio = numKeyUnits-1-p; // descending order
+            put_into_GlobalUnits( focalUnit.string );
+            sprintf(decomposition, "%s (%d,%s,%d,%d,%d)", decomposition, focalUnit.prio, focalUnit.string, focalUnit.len,  focalUnit.sumOccurrences, focalUnit.sumTandem);
+            total_valid_units++;
+            
+            //fprintf(stderr, "%d\t%d\t%s\n", focalUnit.prio, focalUnit.sumOccurrences, focalUnit.string);
+        }
+    }
+    
+    sprintf(currentRead->decomposition, "[%d%s]", total_valid_units, decomposition);
+    currentRead->numKeyUnits = total_valid_units;
+    
     gettimeofday(&e, NULL);
     time_set_cover_greedy += (e.tv_sec - s.tv_sec) + (e.tv_usec - s.tv_usec)*1.0E-6;
-    
-    currentRead->numKeyUnits = numKeyUnits;
-    //return(numKeyUnits);
 }

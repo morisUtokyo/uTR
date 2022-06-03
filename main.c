@@ -10,44 +10,97 @@
 void put_qualified_read(Read *currentRead, int i){
     int numReads, diameter, radius;
     // The annotation starts with a space " " !!!
-    sscanf(currentRead->ID, " GroupSize = %d, Diameter = %d, RadiusFromCentroid = %d", &numReads, &diameter, &radius);
+    // To parse CentroidReadName = B483,read1, use %[^,] in place of %s
+    sscanf(currentRead->ID, " GroupSize = %d, Diameter = %d, RadiusFromCentroid = %d, CentroidReadName = %[^,],%[^,], CentroidReadLength =", &numReads, &diameter, &radius, Qreads[i].individualID, Qreads[i].readID);
+    
     Qreads[i].numReads     = numReads;
     Qreads[i].len          = currentRead->len;
     Qreads[i].numKeyUnits  = currentRead->numKeyUnits;
-    Qreads[i].mosaic_mode  = currentRead->mosaic_mode;
+    //Qreads[i].mosaic_mode  = currentRead->mosaic_mode;
     Qreads[i].sumTandem    = currentRead->sumTandem;
+    Qreads[i].discrepancy_ratio = currentRead->discrepancy_ratio;
+    strcpy(Qreads[i].decomposition, currentRead->decomposition);
+}
+
+void build_Haps(char *hapFile){
+    FILE *hfp;
+    char s[BLK+1];
+    hap_cnt = 0;
+
+    hfp = fopen(hapFile, "r");
+    while (fgets(s, BLK, hfp) != NULL) hap_cnt++;
+    fclose(hfp);
+    
+    Haps = (Hap *) malloc( sizeof(Hap) * hap_cnt );
+    hfp = fopen(hapFile, "r");
+    int i=0;
+    while (fgets(s, BLK, hfp) != NULL){
+        sscanf(s, "%s\t%d\t%s", Haps[i].individualID, &Haps[i].readID, Haps[i].pairHaps);
+        i++;
+    }
+    fclose(hfp);
+}
+
+void print_Haps(){
+    for(int i=0; i<hap_cnt; i++)
+        printf("%s\t%d\t%s\n", Haps[i].individualID, Haps[i].readID, Haps[i].pairHaps);
+}
+
+char *query_hap(char *individualID, int readID){
+    for(int i=0; i<hap_cnt; i++){
+        if(strcmp(individualID, Haps[i].individualID) == 0 && readID == Haps[i].readID ){
+            return(Haps[i].pairHaps);
+        }
+    }
+    return(NULL);
 }
 
 int main(int argc, char *argv[])
 {    
     char inputFile[500];    // For the input file name
     char repUnit[1000];     // For storing a representative unit
+    char hapFile[500];      // For the haplotype file name
     char outputFile[500];   // For the output file name
+    char tableFile[500];    // For the table file name (repRead, information)
     int inputFile_given = 0;
     int repUnit_given = 0;
+    int hapFile_given = 0;
     int print_time = 0;
     int print_EDDC = 0;
+    int print_table = 0;
+    int hide_IDs = 0;
+    int decomposition_only=0;
     int opt;
     
     MAX_DIS_RATIO = MAX_DIS_RATIO_DEFAULT;
     float ratio;
     
-    while ((opt = getopt(argc, argv, "f:u:o:r:t")) != -1) {
+    while ((opt = getopt(argc, argv, "f:u:h:o:i:r:std")) != -1) {
         switch(opt){
             case 'f':
                 strcpy(inputFile,optarg);   inputFile_given = 1;    break;
             case 'u':
                 strcpy(repUnit, optarg);    repUnit_given= 1;    break;
+            case 'h':
+                strcpy(hapFile,optarg);
+                build_Haps(hapFile); //print_Haps();
+                hapFile_given = 1;    break;
             case 'o':
                 strcpy(outputFile, optarg); print_EDDC = 1; break;
-            case 't':
-                print_time = 1; break;
+            case 'i':
+                strcpy(tableFile, optarg);  print_table = 1; break;
             case 'r':
                 sscanf(optarg, "%f", &ratio);
                 MAX_DIS_RATIO = ratio;
                 break;
+            case 't':
+                print_time = 1; break;
+            case 's':
+                hide_IDs = 1; break;
+            case 'd':
+                decomposition_only = 1; break;
             default:
-                fprintf(stderr, "Usage: uTR -f <fasta file> (-u <representative unit string>) -o <output file>\n");
+                fprintf(stderr, "Usage: uTR -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only)) -o <EDDC output file>\n");
                 exit(EXIT_FAILURE);
         }
     }
@@ -61,87 +114,98 @@ int main(int argc, char *argv[])
     
     FILE *fp = init_handle_one_file(inputFile);
     FILE *ofp;
-    if(print_EDDC == 1)
-        ofp = fopen(outputFile, "w");
-    else
-        ofp = stdout;
+    if(print_EDDC == 1) ofp = fopen(outputFile, "w"); else ofp = stdout;
+    FILE *tfp;
+    if(print_table== 1) tfp = fopen(tableFile, "w");  else tfp = stdout;
     
     Read *currentRead = malloc(sizeof(Read));
-    malloc_Units(); malloc_GlobalUnits();
+    if(currentRead==NULL){ fprintf(stderr, "Failure to malloc currentRead\n"); exit(EXIT_FAILURE); }
+    malloc_Units(); malloc_GlobalVars();
     if(repUnit_given == 1)  put_repUnit(repUnit);
     for(int i=0; repUnit[i]!='\0'; i++, repUnitLen=i){}
     
     int numQualifiedReads = 0;
+    char decomposition[MAX_READ_LENGTH];
+    char stat[MAX_READ_LENGTH];
+    char stat_table[MAX_READ_LENGTH];
+    char individualID[MAX_ID_LENGTH];
+    char readID[MAX_ID_LENGTH];
     // Feed each read and make the database of units
     for(int i=0;;i++){
         return_one_read(fp, currentRead);
         if(currentRead->len == 0) break;
-
-        for(int j=0; j<2; j++){
-            int MIN_reps = 2-j; // First MTR, then MR
-            // mosaic tandem repeats = 2, mosaic repeats = 1
-            clear_Units_incrementally();
-            get_non_self_overlapping_prefixes(currentRead->string);
-            coverage_by_units(currentRead->string, MIN_reps);
-
-            if(0 < unit_cnt)
-                set_cover_greedy(ofp, currentRead, MIN_reps);
-            int numKeyUnits = currentRead->numKeyUnits;
+        
+        for(int MIN_reps=2; 0 < MIN_reps; MIN_reps--){
             if(MIN_reps == 2)
                 currentRead->mosaic_mode = Mosaic_tandem_repeat;
             else if(MIN_reps == 1)
                 currentRead->mosaic_mode = Mosaic_repeat;
-            int numReads, diameter, radius, readlen;
-            char readID[1000];
+            // mosaic tandem repeats = 2, mosaic repeats = 1
+            clear_Units_incrementally();
+            // Set the set of units to the empty set
+            get_non_self_overlapping_prefixes(currentRead->string);
+            // Put non-self-overlapping units into Units by calling nsop and put_unit.
+            coverage_by_units(currentRead->string, MIN_reps);
+            // Set Units[j].sumOccurrences to the tentative number of occurrences of each candidate unit by calling compute_sumOccurrences, count_occurrences (SA for short motifs), and count_occurrences_long_unit (DP for long motifs).
+            if(0 < unit_cnt)
+                set_cover_greedy(ofp, currentRead, MIN_reps); // Select TOP_k_units units in a batch manner and put them into prio2unit, a local array
             // The annotation starts with a space " " !!!
-            sscanf(currentRead->ID, " GroupSize = %d, Diameter = %d, RadiusFromCentroid = %d, CentroidReadName = %s, CentroidReadLength = %d", &numReads, &diameter, &radius, readID, &readlen);
-            
-            if(0 < numKeyUnits){ // Print reads with primary units
-                if(print_EDDC == 1){ // Print annotation of the focal read
-                    fprintf(ofp, "> (%d,%d,%d,", currentRead->len, numReads, numKeyUnits);
-                    if(MIN_reps == 2)
-                        fprintf(ofp, "MTR,");// mosaic tandem repeats
-                    else if(MIN_reps == 1)
-                        fprintf(ofp, "MR,"); // mosaic repeats
-                    // Print the total number of bases in tandem repeat units
-                    fprintf(ofp, "%d),%s S=", currentRead->sumTandem, readID);
+            int numReads, diameter, radius, readlen;
+            int return_sscanf = sscanf(currentRead->ID, " GroupSize = %d, Diameter = %d, RadiusFromCentroid = %d, CentroidReadName = %[^,],%[^,], CentroidReadLength = %d", &numReads, &diameter, &radius, individualID, readID, &readlen);
+            if(return_sscanf == 0){
+                strcpy(individualID, "NA"); strcpy(readID, "NA"); numReads=1;
+            }
+            //fprintf(stderr, "ID=%s\treadID=%s\tnum=%d\n", individualID, readID, numReads);
+
+            if(0 < currentRead->numKeyUnits){ // Print reads with primary units
+
+                sprintf(stat, "");
+                sprintf(stat_table, "");
+                if(decomposition_only == 0){
+                    if(hide_IDs == 0)
+                        sprintf(stat, "(%s,%s,%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
+                    else
+                        sprintf(stat, "(%d,%d,%3.2f) ", currentRead->len, numReads, currentRead->discrepancy_ratio);
+                    sprintf(stat_table, "%s,%s (%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
+                    
                 }
-                // 1-origin index for prio !!!
-                int prevSum = 0; // As Units[j].sumOccurrences is the cumulative sum of bases in all units including the focal unit, to compute the sum of bases in the focal unit, compute the sum of bases in all units before the focal unit.
-                for(int prio=1; prio <= MIN(TOP_k_units, unit_cnt); prio++){
-                    for(int j=0; j<unit_cnt; j++)
-                        if(prio == Units[j].prio){  // Note that 1 <= Units[j].prio
-                            put_into_GlobalUnits(Units[j].string);
-                            if(print_EDDC == 1)
-                                fprintf(ofp, "(%d,%s,%d,%d,%d),", prio, Units[j].string, Units[j].len,  Units[j].sumOccurrences - prevSum, Units[j].sumTandem);
-                            // Units[j].sumOccurrences - prevSum is the sum of bases in all units before the focal unit.
-                            prevSum = Units[j].sumOccurrences;
-                        }
-                }
+                // Print annotation of the focal read
+                if(print_EDDC == 1)     fprintf(ofp, "> %s", stat);
+                if(print_table == 1)    fprintf(tfp, "%s", stat_table);
+               
+                if(print_EDDC == 1 && currentRead->RegExpressionDecomp == 0)
+                    fprintf(ofp, "%s ", currentRead->decomposition);
+                if(print_table == 1)
+                    fprintf(tfp, "%s ", currentRead->decomposition);
+                
                 put_qualified_read(currentRead, numQualifiedReads);
+
                 numQualifiedReads++;
                 if(print_EDDC == 1){    // Print the focal read
-                    fprintf(ofp, " D=%s\n", currentRead->RegExpression);
-                    fprintf(ofp, "%s\n",   currentRead->string);
+                    int int_readID;
+                    fprintf(ofp, "%s ", currentRead->RegExpression);
+                    if(decomposition_only == 0){
+                        sscanf(readID, "read%d", &int_readID);
+                        fprintf(ofp, "<%s>", query_hap(individualID, int_readID) );
+                    }else
+                        fprintf(ofp, "discrepancy=%3.2f", currentRead->discrepancy_ratio);
+                    fprintf(ofp, "\n%s\n", currentRead->string);
                 }
+                if(print_table == 1)
+                    fprintf(tfp,"\n");
                 break;
             }
         }
     }
     if(0 < numQualifiedReads){
-        printf(" #haplotypes=%d ", numQualifiedReads);
+        printf(" #haplotypes=%d", numQualifiedReads);
         for(int i=0; i<numQualifiedReads; i++){
-            printf("(%d,%d,%d,", Qreads[i].len, Qreads[i].numReads, Qreads[i].numKeyUnits);
-            if(Qreads[i].mosaic_mode == Mosaic_tandem_repeat)
-                printf("MTR,");
-            else
-                printf("MR,");
-            printf("%d) ", Qreads[i].sumTandem);
+            printf(" (%s,%s,%d,%d,%d,%3.2f) %s", Qreads[i].individualID, Qreads[i].readID, Qreads[i].len, Qreads[i].numReads, Qreads[i].numKeyUnits, Qreads[i].decomposition, Qreads[i].discrepancy_ratio);
         }
-        printf("#units=%d ", global_unit_cnt);
+        printf(" #units=%d ", global_unit_cnt);
         for(int i=0; i<global_unit_cnt; i++){
             printf("(%s,%d) ", GlobalUnits[i].string, GlobalUnits[i].sumOccurrences);
-            if(print_EDDC == 1) // Print primary units for EDDC algorithm
+            if(print_EDDC == 1 && decomposition_only == 0) // Print primary units for EDDC algorithm
                 fprintf(ofp, "> frequent unit. freq. = %d\n%s\n", GlobalUnits[i].sumOccurrences, GlobalUnits[i].string);
         }
         printf("\n");
@@ -151,13 +215,14 @@ int main(int argc, char *argv[])
     fclose(fp);
     if(print_EDDC == 1) fclose(ofp);
     free_Units();
-    free_GlobalUnits();
+    free_GlobalVars();
     
 
     if(print_time == 1){
         gettimeofday(&e, NULL);
         float time_all = (e.tv_sec - s.tv_sec) + (e.tv_usec - s.tv_usec)*1.0E-6;
-        fprintf(stderr, "file=%s\ttime=%f\tunit_cnt=%d\tMAX_DIS_RATIO=%.3f\n", inputFile,time_all, unit_cnt, MAX_DIS_RATIO);
+        //fprintf(stderr, "file=%s\ttime=%f\tunit_cnt=%d\tMAX_DIS_RATIO=%.3f\n", inputFile,time_all, unit_cnt, MAX_DIS_RATIO);
+        fprintf(stderr, "%s\t%f sec\n", inputFile, time_all);
     }
     
     return EXIT_SUCCESS;

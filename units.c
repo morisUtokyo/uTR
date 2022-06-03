@@ -89,8 +89,11 @@ void match_bounded_DP_traceback(char *s0, int n0, char *s1, int n1, int *covered
     // Generate an (n0+1) x (n1+1) matrix
     int **mat;
     mat = malloc( sizeof(int *) * (n0+1) );
-    for(int i=0; i < n0+1; i++)
+    if(mat == NULL){ fprintf(stderr, "Failure to malloc mat\n"); exit(EXIT_FAILURE); }
+    for(int i=0; i < n0+1; i++){
         mat[i] = malloc( sizeof(int) * (n1+1) );
+        if(mat[i]==NULL){ fprintf(stderr, "Failure to malloc mat[i]\n"); exit(EXIT_FAILURE); }
+    }
     
     // Compute the maximum limit of disagreements
     int max_dis =  ceil(MAX_DIS_RATIO * n0);
@@ -159,10 +162,14 @@ int rotate_match(char *S0, int n0, char *S1, int n1){
     // Generate an (n0+1) x (n1+1) matrix
     int **mat;
     mat = malloc( sizeof(int *) * (n0+1) );
-    for(int i=0; i < n0+1; i++)
+    if(mat == NULL){ fprintf(stderr, "Failure to malloc mat\n"); exit(EXIT_FAILURE); }
+    for(int i=0; i < n0+1; i++){
         mat[i] = malloc( sizeof(int) * (n1+1) );
+        if(mat[i] == NULL){ fprintf(stderr, "Failure to malloc mat[i]\n"); exit(EXIT_FAILURE); }
+    }
     //
     char *rotated_s1 = malloc(sizeof(char) * (n1+1));
+    if(rotated_s1 == NULL){ fprintf(stderr, "Failure to malloc rotated_s1\n"); exit(EXIT_FAILURE); }
     
     int match = 0;
     for(int start=0; start<n1; start++){
@@ -197,6 +204,7 @@ void retain_top_k_units(int topK){
     if(unit_cnt <= topK)  return;  // Do not reduce units.
     
     int *array_sumOccurrences = malloc(sizeof(int) * unit_cnt);
+    if(array_sumOccurrences == NULL){ fprintf(stderr, "Failure to malloc array_sumOccurrences\n"); exit(EXIT_FAILURE); }
     for(int i=0; i<unit_cnt; i++)
         array_sumOccurrences[i] = Units[i].sumOccurrences;
     int threshold_top_k =
@@ -289,8 +297,6 @@ void put_repUnit(char *tmpUnit){
     // RepUnit is the first unit and is put into the database.
     Units[0].ID  = tmpID;
     Units[0].len = len;
-    free(Units[0].string);
-    Units[0].string = malloc( sizeof(char) * (len+1) );
     for(int i=0; i<len; i++)
         Units[0].string[i] = tmpUnit[i];
     Units[0].string[len] = '\0';
@@ -298,8 +304,6 @@ void put_repUnit(char *tmpUnit){
     
     GlobalUnits[0].ID  = tmpID;
     GlobalUnits[0].len = len;
-    free(GlobalUnits[0].string);
-    GlobalUnits[0].string = malloc( sizeof(char) * (len+1) );
     for(int i=0; i<len; i++)
         GlobalUnits[0].string[i] = tmpUnit[i];
     GlobalUnits[0].string[len] = '\0';
@@ -346,10 +350,10 @@ void put_unit(char *tmpUnit){
 
 void put_into_GlobalUnits(char *tmpUnit){
     // Assume that tmpUnit is non-self-overlapping
+    // tmpUnit can be MAX_UNIT_LENGTH or more in size because the user is allowed to input longer rep units
     
     int len;
     for(len=0; tmpUnit[len] != '\0'; len++);
-    //if( MAX_UNIT_LENGTH < len || len == 0) return; // Discard if the length exceeds the max.
 
     // Check if tmpUnit is in the database.
     int tmpID = min_quadratic_ID_with_rotation(tmpUnit, len);

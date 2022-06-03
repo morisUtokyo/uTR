@@ -73,7 +73,7 @@ public:
 };
 
 void count_occurrences_long_unit(char *S, int n, int *SA, int *C, int **OCC, char *unit, int unitLen, int *covered, int MIN_number_repetitions ){
-    
+
     set<Alignment*> set_of_alignments;
     for(int l=0; l<unitLen; l++){
         int lb = 0;
@@ -134,7 +134,6 @@ void count_occurrences_long_unit(char *S, int n, int *SA, int *C, int **OCC, cha
 }
 
 
-//#define DUMP_Kawahara_nsop_Z
 //-------------------------------------------------------------------
 //
 // Riki Kawahara has the copyright of the following program.
@@ -264,16 +263,6 @@ void dump_int_array(int *a, int len, string name){
 
 // Riki Kawahara's algorithm that lists all non-self-overlapping substrings for a given string S in O(n^2)-time
 void nsop(string S, int start){
-        #ifdef DUMP_Kawahara_nsop_Z
-        cout << "String\t";
-        for(int i=0; i<S.size(); i++)
-            cout << S[i] << " ";
-        cout << "\t[" << start << "," << start+S.size()-1 << "]\n";
-        cout << "i\t";
-        for(int i=0; i<S.size(); i++)
-            cout << start+i << " ";
-        cout << "\n";
-        #endif
     int *Z = (int*) malloc(sizeof(int) * S.size() );
     // Z-algorithm
     // Copied from https://qiita.com/Pro_ktmr/items/16904c9570aa0953bf05
@@ -297,29 +286,14 @@ void nsop(string S, int start){
         OL[j]++;
         OL[j+Z[j]]--;
     }
-        #ifdef DUMP_Kawahara_nsop_Z
-        dump_int_array(Z,  S.size(), "Z");
-        dump_int_array(OL, S.size(), "OL");
-        #endif
     for(int j=1; j<S.size(); j++){
         OL[j] += OL[j-1];
     }
-        #ifdef DUMP_Kawahara_nsop_Z
-        dump_int_array(OL, S.size(), "OL");
-        for(int j=1; j<S.size(); j++){
-            if(OL[j] == 0){  // non-self-overlapping
-                //string tmp = S.substr(0,j+1);
-                cout << "nsop\t" << &(S.substr(0,j+1))[0] << "\t[" << start << "," << start+j <<  "]\n";
-            }
-        }
-        #endif
-    #ifndef DUMP_Kawahara_nsop_Z
     for(int j=1; j<S.size(); j++){
         if(OL[j] == 0){
             put_unit(&(S.substr(0,j+1))[0]);
         }
     }
-    #endif
     free(Z);
     free(OL);
 }
@@ -329,16 +303,7 @@ void get_non_self_overlapping_prefixes(char *aS){
     int n = s.size();
     auto sa = suffix_array(s);
     auto lcp = lcp_array(s, sa);    // lcp of the i-th and (i+1)-th suffixes
-    
-    #ifdef DUMP_Kawahara_nsop_Z
-    cout << "i\t";
-    for(int i=0; i<sa.size(); i++)  cout << i << "\t";
-    cout << "\nSA\t";
-    for(int i=0; i<sa.size(); i++)  cout << sa[i] << "\t";
-    cout << "\nlcp\t";
-    for(int i=0; i<lcp.size(); i++) cout << lcp[i] << "\t";
-    cout << "\n";
-    #endif
+
     // Process repetitive non-self-overlapping substrings using lcp
         for(int i=0, max_lcp=0, max_i=0, up_state=1; i<sa.size(); i++){
             if(max_lcp < lcp[i]){
@@ -361,13 +326,3 @@ void get_non_self_overlapping_prefixes(char *aS){
     }
 }
 
-#ifdef DUMP_Kawahara_nsop_Z
-int main()
-{
-    //char *S = "AAAGAAAAG";
-    //char *S = "momomosumomomomo";
-    char S[] = "ATAATACGATAATAA";
-    get_non_self_overlapping_prefixes(S);
-    return(0);
-}
-#endif

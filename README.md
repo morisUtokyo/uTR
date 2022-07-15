@@ -21,7 +21,7 @@ For example:
 
 -o : uTR outputs the given input fasta file annotated with decompositions identified in the reads. For example:
 
-> \> (ID,read1,166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] \<AAAG\>6\<AG\>25\<AAAG\>23e
+> \> (ID,read1,166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] \<AAAG\>6\<AG\>25\<AAAG\>23
 > AAAGAAAGAAAGAAAGAAAGAAAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAGAAAGAAAGAAAGGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAAGAAA
 
 - (ID,read1,166,10,2,0.01): ID is the identifier of a sample, read1 is the name of a read collected from the sample, and the pair of ID and read1 is the centroid of a group of strings. 166 shows the length of the centroid, 10 is the number of elements in the group, 2 is the number of key repeat units in the centroid read, and 0.01 is the mismatch ratio between the read and the decomposition \<AAAG\>6\<AG\>25\<AAAG\>23 of the above input string, which concatenates 6 copies of AAAG, 25 copies of AG, and 23 copies of AAAG.

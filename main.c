@@ -185,11 +185,11 @@ int main(int argc, char *argv[])
                 if(print_EDDC == 1){    // Print the focal read
                     int int_readID;
                     fprintf(ofp, "%s ", currentRead->RegExpression);
-                    if(regular_expression_only == 0){
-                        sscanf(readID, "read%d", &int_readID);
-                        if(hapFile_given == 1)
-                            fprintf(ofp, "<%s>", query_hap(individualID, int_readID) );
-                    }
+                    // Print a pair of nearest SNVs
+                    sscanf(readID, "read%d", &int_readID);
+                    if(hapFile_given == 1)
+                        fprintf(ofp, "<%s>", query_hap(individualID, int_readID) );
+                    // Print the string with TR
                     fprintf(ofp, "\n%s\n", currentRead->string);
                 }
                 if(print_table == 1)

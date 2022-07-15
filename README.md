@@ -35,4 +35,10 @@ For example:
 
 -s : Do not print the pair of sample identifier ID and the name of the read. 
 
+> \> (166,10,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] \<AAAG\>6\<AG\>25\<AAAG\>23
+
 -d : Print the decomposition only.
+
+> Given -s and -d, 
+> 
+> \> (166,10,0.01) \<AAAG\>6\<AG\>25\<AAAG\>23

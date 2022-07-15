@@ -11,8 +11,13 @@ void put_qualified_read(Read *currentRead, int i){
     int numReads, diameter, radius;
     // The annotation starts with a space " " !!!
     // To parse CentroidReadName = B483,read1, use %[^,] in place of %s
-    sscanf(currentRead->ID, " GroupSize = %d, Diameter = %d, RadiusFromCentroid = %d, CentroidReadName = %[^,],%[^,], CentroidReadLength =", &numReads, &diameter, &radius, Qreads[i].individualID, Qreads[i].readID);
+    int return_sscanf = sscanf(currentRead->ID, " GroupSize = %d, Diameter = %d, RadiusFromCentroid = %d, CentroidReadName = %[^,],%[^,], CentroidReadLength =", &numReads, &diameter, &radius, Qreads[i].individualID, Qreads[i].readID);
     
+    if(return_sscanf == 0){
+        numReads = 1;
+        strcpy( Qreads[i].individualID, "NA");
+        strcpy( Qreads[i].readID, "NA");
+    }
     Qreads[i].numReads     = numReads;
     Qreads[i].len          = currentRead->len;
     Qreads[i].numKeyUnits  = currentRead->numKeyUnits;
@@ -69,7 +74,7 @@ int main(int argc, char *argv[])
     int print_EDDC = 0;
     int print_table = 0;
     int hide_IDs = 0;
-    int decomposition_only=0;
+    int regular_expression_only=0;
     int opt;
     
     MAX_DIS_RATIO = MAX_DIS_RATIO_DEFAULT;
@@ -98,7 +103,7 @@ int main(int argc, char *argv[])
             case 's':
                 hide_IDs = 1; break;
             case 'd':
-                decomposition_only = 1; break;
+                regular_expression_only = 1; break;
             default:
                 fprintf(stderr, "Usage: uTR -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only)) -o <EDDC output file>\n");
                 exit(EXIT_FAILURE);
@@ -155,25 +160,21 @@ int main(int argc, char *argv[])
             if(return_sscanf == 0){
                 strcpy(individualID, "NA"); strcpy(readID, "NA"); numReads=1;
             }
-            //fprintf(stderr, "ID=%s\treadID=%s\tnum=%d\n", individualID, readID, numReads);
-
             if(0 < currentRead->numKeyUnits){ // Print reads with primary units
-
                 sprintf(stat, "");
                 sprintf(stat_table, "");
-                if(decomposition_only == 0){
-                    if(hide_IDs == 0)
-                        sprintf(stat, "(%s,%s,%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
-                    else
-                        sprintf(stat, "(%d,%d,%3.2f) ", currentRead->len, numReads, currentRead->discrepancy_ratio);
-                    sprintf(stat_table, "%s,%s (%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
-                    
-                }
+
+                if(hide_IDs == 0)
+                    sprintf(stat, "(%s,%s,%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
+                else
+                    sprintf(stat, "(%d,%d,%3.2f) ", currentRead->len, numReads, currentRead->discrepancy_ratio);
+                sprintf(stat_table, "%s,%s (%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
+                
                 // Print annotation of the focal read
                 if(print_EDDC == 1)     fprintf(ofp, "> %s", stat);
                 if(print_table == 1)    fprintf(tfp, "%s", stat_table);
                
-                if(print_EDDC == 1 && currentRead->RegExpressionDecomp == 0)
+                if(print_EDDC == 1 && regular_expression_only  == 0)
                     fprintf(ofp, "%s ", currentRead->decomposition);
                 if(print_table == 1)
                     fprintf(tfp, "%s ", currentRead->decomposition);
@@ -184,11 +185,11 @@ int main(int argc, char *argv[])
                 if(print_EDDC == 1){    // Print the focal read
                     int int_readID;
                     fprintf(ofp, "%s ", currentRead->RegExpression);
-                    if(decomposition_only == 0){
+                    if(regular_expression_only == 0){
                         sscanf(readID, "read%d", &int_readID);
-                        fprintf(ofp, "<%s>", query_hap(individualID, int_readID) );
-                    }else
-                        fprintf(ofp, "discrepancy=%3.2f", currentRead->discrepancy_ratio);
+                        if(hapFile_given == 1)
+                            fprintf(ofp, "<%s>", query_hap(individualID, int_readID) );
+                    }
                     fprintf(ofp, "\n%s\n", currentRead->string);
                 }
                 if(print_table == 1)
@@ -200,12 +201,12 @@ int main(int argc, char *argv[])
     if(0 < numQualifiedReads){
         printf(" #haplotypes=%d", numQualifiedReads);
         for(int i=0; i<numQualifiedReads; i++){
-            printf(" (%s,%s,%d,%d,%d,%3.2f) %s", Qreads[i].individualID, Qreads[i].readID, Qreads[i].len, Qreads[i].numReads, Qreads[i].numKeyUnits, Qreads[i].decomposition, Qreads[i].discrepancy_ratio);
+            printf(" (%s,%s,%d,%d,%d,%3.2f) %s", Qreads[i].individualID, Qreads[i].readID, Qreads[i].len, Qreads[i].numReads, Qreads[i].numKeyUnits, Qreads[i].discrepancy_ratio, Qreads[i].decomposition);
         }
         printf(" #units=%d ", global_unit_cnt);
         for(int i=0; i<global_unit_cnt; i++){
             printf("(%s,%d) ", GlobalUnits[i].string, GlobalUnits[i].sumOccurrences);
-            if(print_EDDC == 1 && decomposition_only == 0) // Print primary units for EDDC algorithm
+            if(print_EDDC == 1) // Print primary units for EDDC algorithm
                 fprintf(ofp, "> frequent unit. freq. = %d\n%s\n", GlobalUnits[i].sumOccurrences, GlobalUnits[i].string);
         }
         printf("\n");
@@ -221,7 +222,6 @@ int main(int argc, char *argv[])
     if(print_time == 1){
         gettimeofday(&e, NULL);
         float time_all = (e.tv_sec - s.tv_sec) + (e.tv_usec - s.tv_usec)*1.0E-6;
-        //fprintf(stderr, "file=%s\ttime=%f\tunit_cnt=%d\tMAX_DIS_RATIO=%.3f\n", inputFile,time_all, unit_cnt, MAX_DIS_RATIO);
         fprintf(stderr, "%s\t%f sec\n", inputFile, time_all);
     }
     

@@ -4,7 +4,7 @@ Decompose a DNA string into mosaic tandem repeats with different repeat units
 ## Usage
 uTR [-f input fasta file] [-u input representative unit string] [-h input haplotype file] [-i output table file] [-r maximum discrepancy ratio] [-o output fasta file with decomposition] [-tsd]
 
--f : Feed a fasta file. Input a smaller input fasta file to reduce the computation time, and for this purpose, cTR is useful because it clusters reads collected from individuals to unique representative reads (https://github.com/morisUtokyo/cTR). cTR outputs the following information to the annotation of the representative read of each group, and uTR feeds the annotation. 
+-f : Feed a fasta file. Input a smaller input fasta file to reduce the computation time. For this purpose, cTR is useful because it clusters reads collected from individuals to unique TR representatives (https://github.com/morisUtokyo/cTR). cTR outputs the following information to the annotation of the representative read of each group, and uTR feeds the annotation. 
 
 > \>GroupSize = N, Diameter = D, RadiusFromCentroid = R, CentroidReadName = ID, CentroidReadLength = L
 

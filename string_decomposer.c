@@ -14,7 +14,15 @@
 //#define DEGUG_string_decomposer1
 //#define DEGUG_string_decomposer2
 
-void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *prio2unit){
+void reverse_ordering(int numKeyUnits, int* array){
+       for(int p=0; p<numKeyUnits/2; p++){
+        int tmp = array[p];
+        array[p] = array[numKeyUnits-1-p];
+        array[numKeyUnits-1-p] = tmp;
+    }
+}
+
+void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *prio2unit, int MIN_number_repetitions){
     if(numKeyUnits < 1) return;
     // Although currentRead->intString[i] and keyUnits[b].intString[j] are 0-origin indexing, their matrix are 1-origin indexing to device wrap-around DP.
     
@@ -46,7 +54,7 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
     int val_match, val_mismatch, val_insertion, val_deletion;
     WrapDP[0] = 0;
     for(i=1; i <= lenR; i++){   // Scan repeat. 1-origin indexing.
-        int min_lenU = 10000;
+        //int min_lenU = 10000;
         bU = (lenR + 1);
         int max_column = (-1) * INDEL_PENALTY * lenR;
         for(b=0; b < numKeyUnits; b++){     // Process each unit in keyUnits
@@ -197,10 +205,6 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
             lenU = keyUnits[b].len;
             j = lenU;
         }
-        // a bug ...
-        //if(deleted == 0){
-        //    blocks[i] = b;  // When j is not deleted, we assign b to blocks[i] because i has been decremented and is equal to i in terms of 0-origin indexing.
-        //}else deleted = 0;
     }
 #ifdef DEGUG_string_decomposer1
     for(int k=0; k < lenR; k++) fprintf(stderr, "%d", blocks[k]);
@@ -211,6 +215,9 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
     // Represent the decomposition by a regular expression
     //----------------------------------------------
     currentRead->discrepancy_ratio = (float) (Num_mismatches + Num_deletions + Num_insertions) / lenR;
+    currentRead->mismatch_ratio    = (float) Num_mismatches / lenR;
+    currentRead->deletion_ratio    = (float) Num_deletions  / lenR;
+    currentRead->insertion_ratio   = (float) Num_insertions / lenR;
     //currentRead->discrepancy_ratio = 1 - ((float) Num_matches / lenR);
     for(int b=0; b < numKeyUnits; b++){
         // Reset and recalculate these values.
@@ -218,16 +225,17 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
         Units[prio2unit[b]].sumTandem = 0;
     }
 
+    
     char Decomp[MAX_READ_LENGTH];
     sprintf(Decomp, "");
-    //sprintf(Decomp, "D=");
     int run = 0;
     int prevPrio = blocks[0];
     for(int i=0; i <= lenR; i++){
         if(prevPrio != blocks[i] || i == lenR){
             // Do not break a run of units in the presence of mutations
             Units[prio2unit[prevPrio]].sumOccurrences += run;
-            Units[prio2unit[prevPrio]].sumTandem += run;
+            if(MIN_number_repetitions <= run/Units[prio2unit[prevPrio]].len)
+                Units[prio2unit[prevPrio]].sumTandem += run;
             // Use a pair of square brackets for tandem repeat units
             sprintf(Decomp, "%s<%s>%d", Decomp,  Units[prio2unit[prevPrio]].string, run/Units[prio2unit[prevPrio]].len);
             run = 1;
@@ -235,13 +243,49 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
         }else
             run++;
     }
+    
+    // Revise priority  prio2unit[priority] -> unit identifier
+    int sumOcc[TOP_k_units], sumOcc2[TOP_k_units], new_blocks[TOP_k_units];
+    // sumOCC and sumOcc2 are copies. new_blocks associate an old block ID with the new one after sumOcc is sorted.
+    for(int p=0; p<numKeyUnits; p++){
+        // For sorting in an descending order of sumOccurrences
+        sumOcc[p]  = Units[prio2unit[p]].sumOccurrences;
+        sumOcc2[p] = Units[prio2unit[p]].sumOccurrences;
+        new_blocks[p] = p;
+    }
+    randomQuickSort3(sumOcc,  new_blocks, 0, numKeyUnits-1);
+    reverse_ordering(numKeyUnits, new_blocks); // in an descending order
+    randomQuickSort3(sumOcc2, prio2unit,  0, numKeyUnits-1);
+    //reverse_ordering(numKeyUnits, prio2unit); // in an descending order
 
+
+    char decomposition[MAX_READ_LENGTH];
+    sprintf(decomposition, "");
+    int total_valid_units = 0;
+    //for(int p=0; 0<numKeyUnits; p++){
+    for(int p=numKeyUnits-1; 0<=p; p--){
+        if(0 < sumOcc[p]){
+            Unit focalUnit = Units[prio2unit[p]];
+            //focalUnit.prio = p; // descending order
+            focalUnit.prio = numKeyUnits-1-p; // descending order
+            put_into_GlobalUnits( focalUnit.string );
+            sprintf(decomposition, "%s (%d,%s,%d,%d,%d)", decomposition, focalUnit.prio, focalUnit.string, focalUnit.len,  focalUnit.sumOccurrences, focalUnit.sumTandem);
+            total_valid_units++;
+        }
+    }
+    sprintf(currentRead->decomposition, "[%d%s]", total_valid_units, decomposition);
+    currentRead->numKeyUnits = total_valid_units;
+    
     // Compute a decomposition or a list of blocks
     char ListPrios[MAX_READ_LENGTH];
     // add the list of prios of all nucleotides
     sprintf(ListPrios, "");
     for(int i=0; i<lenR; i++)
-        sprintf(ListPrios, "%s%d", ListPrios, blocks[i]);
+        sprintf(ListPrios, "%s%d", ListPrios, new_blocks[blocks[i]] );
+    
+    currentRead->RegExpressionDecomp = 1;
+    sprintf(currentRead->RegExpression, "%s", Decomp);
+    /*
     int lenDecomp=0;
     for(; Decomp[lenDecomp] !='\0'; lenDecomp++)
     if(lenDecomp < 100){ // If the description length is 100 letters or less, we assume it is readable.
@@ -251,6 +295,7 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
         currentRead->RegExpressionDecomp = 0;
         sprintf(currentRead->RegExpression, "%s", ListPrios);
     }
+     */
     
 #ifdef DEGUG_string_decomposer1
     fprintf(stderr, "%s\n\n", currentRead->RegExpression);

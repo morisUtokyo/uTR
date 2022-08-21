@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
     char hapFile[500];      // For the haplotype file name
     char outputFile[500];   // For the output file name
     char tableFile[500];    // For the table file name (repRead, information)
+    char locus[500];        // For storing the locus ID (e.g., 1234:chr1:456-567)
     int inputFile_given = 0;
     int repUnit_given = 0;
     int hapFile_given = 0;
@@ -75,13 +76,16 @@ int main(int argc, char *argv[])
     int print_table = 0;
     int hide_IDs = 0;
     int regular_expression_only=0;
+    int print_locus=0;
     int opt;
     
     MAX_DIS_RATIO = MAX_DIS_RATIO_DEFAULT;
     float ratio;
     
-    while ((opt = getopt(argc, argv, "f:u:h:o:i:r:std")) != -1) {
+    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:std")) != -1) {
         switch(opt){
+            case 'l':
+                strcpy(locus,optarg);   print_locus = 1;    break;
             case 'f':
                 strcpy(inputFile,optarg);   inputFile_given = 1;    break;
             case 'u':
@@ -105,7 +109,7 @@ int main(int argc, char *argv[])
             case 'd':
                 regular_expression_only = 1; break;
             default:
-                fprintf(stderr, "Usage: uTR -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only)) -o <EDDC output file>\n");
+                fprintf(stderr, "Usage: uTR -l <locus info> -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only)) -o <EDDC output file>\n");
                 exit(EXIT_FAILURE);
         }
     }
@@ -171,7 +175,11 @@ int main(int argc, char *argv[])
                 sprintf(stat_table, "%s,%s (%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
                 
                 // Print annotation of the focal read
-                if(print_EDDC == 1)     fprintf(ofp, "> %s", stat);
+                if(print_EDDC == 1){
+                    fprintf(ofp, ">");
+                    if(print_locus == 1)    fprintf(ofp, " %s", locus);
+                    fprintf(ofp, " %s", stat);
+                }
                 if(print_table == 1)    fprintf(tfp, "%s", stat_table);
                
                 if(print_EDDC == 1 && regular_expression_only  == 0)
@@ -206,8 +214,11 @@ int main(int argc, char *argv[])
         printf(" #units=%d ", global_unit_cnt);
         for(int i=0; i<global_unit_cnt; i++){
             printf("(%s,%d) ", GlobalUnits[i].string, GlobalUnits[i].sumOccurrences);
-            if(print_EDDC == 1) // Print primary units for EDDC algorithm
-                fprintf(ofp, "> frequent unit. freq. = %d\n%s\n", GlobalUnits[i].sumOccurrences, GlobalUnits[i].string);
+            if(print_EDDC == 1){ // Print primary units for EDDC algorithm
+                fprintf(ofp, ">");
+                if(print_locus == 1)    fprintf(ofp, " %s", locus);
+                fprintf(ofp, " frequent unit. freq. = %d\n%s\n", GlobalUnits[i].sumOccurrences, GlobalUnits[i].string);
+            }
         }
         printf("\n");
     }else{

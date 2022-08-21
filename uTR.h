@@ -74,6 +74,9 @@ typedef struct{
     int  mosaic_mode; //Mosaic_tandem_repeat or Mosaic_repeat
     int  sumTandem;   // The sum of bases in mosaic TANDEM repeats
     float discrepancy_ratio;
+    float mismatch_ratio;
+    float deletion_ratio;
+    float insertion_ratio;
     char RegExpression[MAX_READ_LENGTH]; // Decomposition (e.g., D=(AAAG)6,(AG)27,(AAAG)24 or list of prios (e.g., 0000000011111000111)
     int  RegExpressionDecomp; // 1 means a decomposition and 0 a list of prios
     char decomposition[MAX_READ_LENGTH];
@@ -142,7 +145,9 @@ void    SA_IS(unsigned char *s, int *SA, int n, int K, int cs);
 void    coverage_by_units(char *S, int MIN_number_repetitions);
 void    set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions);
 
-void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *prio2unit);
+void    string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *prio2unit, int MIN_number_repetitions);
+
+void    randomQuickSort3(int* target, int* Pos, int aLeft, int aRight);
 
 // Interface between C and C++ functions
 #ifndef __CSUB_H__

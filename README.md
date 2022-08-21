@@ -2,7 +2,9 @@
 Decompose a DNA string into mosaic tandem repeats with different repeat units
 
 ## Usage
-uTR [-f input fasta file] [-u input representative unit string] [-h input haplotype file] [-i output table file] [-r maximum discrepancy ratio] [-o output fasta file with decomposition] [-tsd]
+uTR [-l locus information] [-f input fasta file] [-u input representative unit string] [-h input haplotype file] [-i output table file] [-r maximum discrepancy ratio] [-o output fasta file with decomposition] [-tsd]
+
+-l : Feed the locus information (e.g., chr1:1234-2345), which is added to the annotation of each string in the output fasta file.
 
 -f : Feed a fasta file. Input a smaller input fasta file to reduce the computation time. For this purpose, cTR is useful because it clusters reads collected from individuals to unique TR representatives (https://github.com/morisUtokyo/cTR). cTR outputs the following information to the annotation of the representative read of each group, and uTR feeds the annotation. 
 

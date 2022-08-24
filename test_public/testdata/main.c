@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
         if( fgets(s1, BLK, fp1) != NULL && fgets(s2, BLK, fp2) != NULL){
             if(s1[0] == '>' && s2[0] == '>'){
                 sscanf(s1, "> %s %s", s1_pat, s1_d);
-                sscanf(s2, "> %s %s", s2_pat, s2_d);
+                sscanf(s2, "> %s %s", s2_d, s2_pat);
                 #ifdef DEBUG
                 printf("%s\t%s\t%s\t%s\n", s1_pat, s2_pat, s1_d, s2_d);
                 #endif

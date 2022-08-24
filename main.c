@@ -153,6 +153,7 @@ int main(int argc, char *argv[])
             clear_Units_incrementally();
             // Set the set of units to the empty set
             get_non_self_overlapping_prefixes(currentRead->string);
+            //for(int j=0; j<unit_cnt; j++) fprintf(stderr, "%s\n", Units[j].string);
             // Put non-self-overlapping units into Units by calling nsop and put_unit.
             coverage_by_units(currentRead->string, MIN_reps);
             // Set Units[j].sumOccurrences to the tentative number of occurrences of each candidate unit by calling compute_sumOccurrences, count_occurrences (SA for short motifs), and count_occurrences_long_unit (DP for long motifs).

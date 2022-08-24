@@ -54,7 +54,7 @@ int read_cnt;
 char *nextReadID;
 
 // Parameters for processing long units
-#define LONG_UNIT_LEN_TH    10 // 20
+#define LONG_UNIT_LEN_TH    20 //10
 #define WINDOW_LEN          3 //5
 
 // Parameters for controling bounded alignment among long units

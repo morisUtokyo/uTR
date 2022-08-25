@@ -238,7 +238,9 @@ void randomQuickSort3(int* target, int* Pos, int aLeft, int aRight) {
 
 //#define DEBUG_batch_selection
 int unit_selection(int string_len, int *prio2unit, int MIN_number_repetitions){
-    //int tmpCovered[MAX_READ_LENGTH+1];
+
+    MIN_number_repetitions = 1;
+    
     int *tmpCovered = (int *) malloc(sizeof(int)*(string_len+1));
     for(int i=0; i<string_len+1; i++) tmpCovered[i] = 0;
     int *listPenalty = (int *) malloc(sizeof(int)*unit_cnt);
@@ -259,7 +261,7 @@ int unit_selection(int string_len, int *prio2unit, int MIN_number_repetitions){
     #endif
 
     // greedy selection of units
-    MIN_number_repetitions = 1;
+    //MIN_number_repetitions = 1;
     int k = MIN(TOP_k_units, unit_cnt);
     for(int i=0; i<string_len+1; i++) tmpCovered[i] = 0; // Initialize tmpCovered
     int prev_cum_cnt = 0; // max of cumulative count
@@ -328,32 +330,7 @@ void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
         }
         keyUnits[p].len = len;
     }
-    string_decomposer(currentRead, keyUnits, numKeyUnits, prio2unit);
-    
-    // Revise priority
-    int sumOcc[TOP_k_units];
-    for(int p=0; p<numKeyUnits; p++)
-        sumOcc[p] = Units[prio2unit[p]].sumOccurrences;
-    randomQuickSort3(sumOcc, prio2unit, 0, numKeyUnits-1);
-
-    char decomposition[MAX_READ_LENGTH];
-    sprintf(decomposition, "");
-    int total_valid_units = 0;
-    for(int p=numKeyUnits-1; 0<=p; p--){
-        // sumOcc and prio2unit are sorted in an ascending order
-        if(0 < sumOcc[p]){
-            Unit focalUnit = Units[prio2unit[p]];
-            focalUnit.prio = numKeyUnits-1-p; // descending order
-            put_into_GlobalUnits( focalUnit.string );
-            sprintf(decomposition, "%s (%d,%s,%d,%d,%d)", decomposition, focalUnit.prio, focalUnit.string, focalUnit.len,  focalUnit.sumOccurrences, focalUnit.sumTandem);
-            total_valid_units++;
-            
-            //fprintf(stderr, "%d\t%d\t%s\n", focalUnit.prio, focalUnit.sumOccurrences, focalUnit.string);
-        }
-    }
-    
-    sprintf(currentRead->decomposition, "[%d%s]", total_valid_units, decomposition);
-    currentRead->numKeyUnits = total_valid_units;
+    string_decomposer(currentRead, keyUnits, numKeyUnits, prio2unit, MIN_number_repetitions);
     
     gettimeofday(&e, NULL);
     time_set_cover_greedy += (e.tv_sec - s.tv_sec) + (e.tv_usec - s.tv_usec)*1.0E-6;

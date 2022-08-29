@@ -234,12 +234,14 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
         if(prevPrio != blocks[i] || i == lenR){
             // Do not break a run of units in the presence of mutations
             Units[prio2unit[prevPrio]].sumOccurrences += run;
-            if(MIN_number_repetitions <= run/Units[prio2unit[prevPrio]].len)
-                Units[prio2unit[prevPrio]].sumTandem += run;
-            // Use a pair of square brackets for tandem repeat units
-            sprintf(Decomp, "%s<%s>%d", Decomp,  Units[prio2unit[prevPrio]].string, run/Units[prio2unit[prevPrio]].len);
-            run = 1;
-            prevPrio = blocks[i];
+            if(0 < Units[prio2unit[prevPrio]].len){
+                if(MIN_number_repetitions <= run/Units[prio2unit[prevPrio]].len)
+                    Units[prio2unit[prevPrio]].sumTandem += run;
+                // Use a pair of square brackets for tandem repeat units
+                sprintf(Decomp, "%s<%s>%d", Decomp,  Units[prio2unit[prevPrio]].string, run/Units[prio2unit[prevPrio]].len);
+                run = 1;
+                prevPrio = blocks[i];
+            }
         }else
             run++;
     }

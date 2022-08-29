@@ -115,8 +115,10 @@ int main(int argc, char *argv[])
         
         printf("> ");
         for (int i=0; i<num_units; i++)
-            printf("<%s>%d", argv[i + start_units], randNums[i]);
-        printf(" discrepancy=%3.2f\n", discrepancy);
+            printf("(%s)%d", argv[i + start_units], randNums[i]);
+            //printf("<%s>%d", argv[i + start_units], randNums[i]);
+        printf("\n");
+        //printf(" discrepancy=%3.2f\n", discrepancy);
         printf("%s\n", st);
         j++;
     }

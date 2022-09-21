@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
     count_all++;
     if(match == 1) count_match++;
     
-    printf("%d/%d\n", count_match, count_all);
+    printf("%d\t%d\n", count_match, count_all);
     
     fclose(fp_in);
 

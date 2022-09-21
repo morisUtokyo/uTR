@@ -22,9 +22,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     
-    
-    //char s1[BLK+1], s2[BLK+1], s1_pat[BLK], s2_pat[BLK], s1_d[BLK], s2_d[BLK];
-    
     char *s1 = (char *) malloc( sizeof(char) * BLK );
     char *s2 = (char *) malloc( sizeof(char) * BLK );
     char *s1_pat = (char *) malloc( sizeof(char) * BLK );
@@ -58,7 +55,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    printf("%d %d %d\n", j, i, sum_len/i);
+    printf("%d\t%d\t%d\n", j, i, sum_len/i);
     
     free(s1); free(s2); free(s1_pat); free(s2_pat); free(s1_d); free(s2_d);
     return EXIT_SUCCESS;

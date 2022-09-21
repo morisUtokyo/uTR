@@ -54,6 +54,6 @@ In the directory named "test_public", codes for generating simulated datasets an
 - parse_RepeatMasker: Codes for parsing the output of RepeaseMasker　after entering the simulated datasets (named $TR_file) into RepeatMasker by issuing the command: "repeatmasker -e hmmer -noint -pa 4 -div 0 -xsmall $TR_file" 
 - check_RepeatMasker: Codes for checking the accuracy of RepeatMasker.
 
-Use "make.sh" to compile all codes in the above subdirectories.
+Use "make.sh" to compile all codes in the above subdirectories. 
 
 Use "test.sh" to perform all the steps in a batch manner. The script reports the accuracy of uTR and RepeatMasker in "accuracy_uTR.txt" and "accuracy_RepeatMasker.txt". 

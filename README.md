@@ -58,11 +58,16 @@ Use "make.sh" to compile all codes in the above subdirectories.
 
 Use "test.sh" to perform all the steps in a batch manner. The script reports the accuracy of uTR and RepeatMasker in "accuracy_uTR.txt" and "accuracy_RepeatMasker.txt". For example, the top six rows of accuracy_uTR.txt are:
 
-  > AC AG
-  > 2 20	1000	1000	42
-  > 2 50	1000	1000	104
-  > 2 100	1000	1000	209
-  > 2 200	1000	1000	403
-  > 2 500	998	1000	1011
+> AC AG
+>
+> 2 20	1000	1000	42
+>
+> 2 50	1000	1000	104
+>
+> 2 100	1000	1000	209
+>
+> 2 200	1000	1000	403
+>
+> 2 500	998	1000	1011
 
 The first row shows that 1000 instances mosaic tandem repeats of the form (AC)m (AG)n are generated at random. In the second row,  "2 20" implies that values of variables m and n ranged from 2 to 20, "1000 1000" means that 1000 of 1000 mosaic tandem repeat patterns were predicted correctly, the last "42" shows the average length of all patterns. Similarly, in the sixth row, "2 500" shows that m and n ranged from 2 to 500, "998 1000" means 998 of 1000 patterns were correctly estimated, and the last "1011" shows the average length. 

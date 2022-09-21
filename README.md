@@ -47,7 +47,7 @@ For example:
 
 ## Simulated datasets to show the accuracy of the code
 
-In the directory named "test_public", codes for generating simulated datasets and checking the accuracy of uTR　and RepeatMasker are available in the following sub-directories:
+In the directory named "test_public", codes for generating simulated datasets and checking the accuracy of uTR and RepeatMasker are available in the following sub-directories:
 
 - gendata: Codes for generating simulated datasets with　correct answer mosaic repeat patterns.
 - check_uTR: Codes for checking the accuracy of uTR according to the correct answer patterns.

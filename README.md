@@ -45,15 +45,15 @@ For example:
 > 
 > \> (166,10,0.01) \<AAAG\>6\<AG\>25\<AAAG\>23
 
-## Simulated dataset to show the accuracy of the code
+## Simulated datasets to show the accuracy of the code
 
 In the directory named "test_public", codes for generating simulated datasets and checking the accuracy of uTR　and RepeatMasker are available in the following sub-directories:
 
-- gendata: codes for generating simulated datasets with　correct answer mosaic repeat patterns
-- check_uTR: codes for checking the accuracy of uTR according to the correct answer patterns
-- parse_RepeatMasker: codes for parsing the output of RepeaseMasker　after entering the simulated datasets (named $TR_file) into RepeatMasker by issuing the command: "repeatmasker -e hmmer -noint -pa 4 -div 0 -xsmall $TR_file" 
-- check_RepeatMasker: codes for checking the accuracy of RepeatMasker
+- gendata: Codes for generating simulated datasets with　correct answer mosaic repeat patterns.
+- check_uTR: Codes for checking the accuracy of uTR according to the correct answer patterns.
+- parse_RepeatMasker: Codes for parsing the output of RepeaseMasker　after entering the simulated datasets (named $TR_file) into RepeatMasker by issuing the command: "repeatmasker -e hmmer -noint -pa 4 -div 0 -xsmall $TR_file" 
+- check_RepeatMasker: Codes for checking the accuracy of RepeatMasker.
 
-Use "make.sh" to compile all codes in the above subdirectory.
+Use "make.sh" to compile all codes in the above subdirectories.
 
-Use "test.sh" to perform all the steps in a batch manner, and the script reports the accuracy of uTR and RepeatMasker in "accuracy_uTR.txt" and "accuracy_RepeatMasker.txt". 
+Use "test.sh" to perform all the steps in a batch manner. The script reports the accuracy of uTR and RepeatMasker in "accuracy_uTR.txt" and "accuracy_RepeatMasker.txt". 

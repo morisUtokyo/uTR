@@ -1,5 +1,5 @@
 ## Introduction
-Decompose a DNA string into mosaic tandem repeats with different repeat units
+Decompose a DNA string into mosaic tandem repeats, concatenations of single or multiple repeating units
 
 ## Usage
 uTR [-l locus information] [-f input fasta file] [-u input representative unit string] [-h input haplotype file] [-i output table file] [-r maximum discrepancy ratio] [-o output fasta file with decomposition] [-tsd]
@@ -14,7 +14,7 @@ For example:
 
 > \> GroupSize = 10, Diameter = 4, RadiusFromCentroid = 4, CentroidReadName = sampleID,readID, CentroidReadLength = 166
 
--u : Feed a single representative unit of a putative tandem repeat in the input read, which can be computed by using mTR (https://github.com/morisUtokyo/mTR). If it is not specified, uTR automatically estimates tandem repeat units; however, mTR is better at predicting longer units than uTR (see the results in https://academic.oup.com/bioinformatics/article/37/5/612/5919583). 
+-u : Feed a single representative unit of a putative tandem repeat in the input read, which can be computed by using mTR (https://github.com/morisUtokyo/mTR). If it is not specified, uTR automatically estimates tandem repeat units; however, mTR is better at predicting longer units (typically of length >20 b) than uTR (see the results in https://academic.oup.com/bioinformatics/article/37/5/612/5919583). 
 
 -h : Feed SNV information surrounding a focal TR in a read; namely, a list of tuples of the form sampleID, readID, and a pair of SNV positions closest to the focal TR (e.g., 14882386|14883645, where two positions are separated by the bar "|"). For each read, the pair of nearest SNVs is put into the annotation of the read.
 

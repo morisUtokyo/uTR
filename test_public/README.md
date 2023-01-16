@@ -27,8 +27,12 @@ For each of eight mosaic TR patterns, the program considers six sequencing error
 The program uses RepeatMasker with default parameter settings (-e hmmer -noint -pa 4 -div 0 -xsmall) and TRF with default parameter settings except for lowering the minimum alignment score from 50 to 10 (i.e., 2 7 7 80 10 10 1000 -h -ngs) in order to detect small TRs with 10 or more units in our benchmark datasets.
 
 To define the accuracy of prediction by each method, the predicted number of unit occurrences is allowed to differ by at most X% of the true value, where allowance X is set to 0%, 1%, 2%, or 3%.
-When tool T (uTR, RM, or TRF) is used with allowance X (0%, 1%, 2%, or 3%), the accuracy table named accuracy_T_allowanceX.txt is generated in the directory tmp.
-For example, the top five lines of the accuracy_uTR_allowance0.02.txt are:
+When tool T (uTR, RM, or TRF) is used with allowance X (0%, 1%, 2%, or 3%), the accuracy table named 
+
+    tmp/accuracy_T_allowanceX.txt 
+
+is generated in the directory tmp.
+For example, the top five lines of the tmp/accuracy_uTR_allowance0.02.txt are:
 
     AC_AG_10_200_0.0 992 1000 414
     ACC_GTT_10_200_0.0 998 1000 617
@@ -39,7 +43,7 @@ For example, the top five lines of the accuracy_uTR_allowance0.02.txt are:
 The first row means that of 1000 mosaic TR pattern (AC)i(AG)j, where the values of i and j are selected from 10 to 200 at random, 992 are predicted correctly by uTR when the allowance is set to 0.02, and the average length is 414. 
 In the directory tmp, the Excel table named 
 
-    accuracy_time.xlsx 
+    tmp/accuracy_time.xlsx 
 
 summaries the accuracy and wall clock time.
 uTR outperformed RepeatMasker and TRF in terms of prediction accuracy, and this is especially true when mosaic TRs have three or more series of units.

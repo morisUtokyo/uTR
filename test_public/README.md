@@ -33,14 +33,17 @@ The program uses RepeatMasker with default parameter settings (-e hmmer -noint -
 To define the accuracy of prediction by each method, the predicted number of unit occurrences is allowed to differ by at most X% of the true value, where allowance X is set to 0%, 1%, 2%, or 3%.
 Programs in the following subdirectories evaluate the accuracy of uTR, RepeatMasker, and TRF in terms of the given allowance.
 
-    check_uTR/ parse_RepeatMasker/ check_RepeatMasker/ checkTRF/
+    check_uTR/ 
+    parse_RepeatMasker/ 
+    check_RepeatMasker/ 
+    checkTRF/
 
 When tool T (uTR, RM, or TRF) is used with allowance X (0%, 1%, 2%, or 3%), the accuracy table named 
 
     tmp/accuracy_T_allowanceX.txt 
 
 is generated in the directory tmp.
-For example, the top five lines of the 
+For example, the top five lines of the file
 
     tmp/accuracy_uTR_allowance0.02.txt 
 
@@ -60,5 +63,3 @@ In the directory tmp, the Excel table named
 summaries the accuracy and wall clock time.
 uTR outperformed RepeatMasker and TRF in terms of prediction accuracy, and this is especially true when mosaic TRs have three or more series of units.
 Prediction accuracy of uTR, RepeatMasker, and TRF tends to decrease as the sequencing error rate increases because sequencing errors obscure the original unit patterns and make prediction difficult.
-
-

@@ -14,7 +14,7 @@ The above program creates a test data set consisting of widely different units w
     (AAAG)i(AG)j(AAAG)k (AAAG)i(AG)j(AGGG)k(AG)l(AAAG)m
     (AGGGG)i(AAAAGAAAGAGAGGG)j(AGGGG)k
     
-The variable (e.g., i, j, k, l, m) next to each unit in parentheses represents the number of unit occurrences. Mosaic TRs are harder to decompose when different units are more similar, and more units are present. Mosaic TRs are harder to decompose correctly when different units are more similar, and more distinct units are present.
+The variable (e.g., i, j, k, l, m) next to each unit in parentheses represents the number of unit occurrences. Mosaic TRs are harder to decompose when different units are more similar, and more units are present. 
 To understand the hardness of the decomposition, we generate a variety of datasets of different average lengths for each mosaic TR pattern; i.e., variables in each pattern are set to random values ranging from 10 to 200.
 The program in the following directory generates these datasets.
 

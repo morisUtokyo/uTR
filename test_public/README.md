@@ -37,7 +37,11 @@ For example, the top five lines of the accuracy_uTR_allowance0.02.txt are:
     AAAG_AG_10_200_0.0 982 1000 624
 
 The first row means that of 1000 mosaic TR pattern (AC)i(AG)j, where the values of i and j are selected from 10 to 200 at random, 992 are predicted correctly by uTR when the allowance is set to 0.02, and the average length is 414. 
-In the directory tmp, the Excel table named accuracy_time.xlsx summaries the accuracy and wall clock time.
+In the directory tmp, the Excel table named 
+
+> accuracy_time.xlsx 
+
+summaries the accuracy and wall clock time.
 uTR outperformed RepeatMasker and TRF in terms of prediction accuracy, and this is especially true when mosaic TRs have three or more series of units.
 Prediction accuracy of uTR, RepeatMasker, and TRF tends to decrease as the sequencing error rate increases because sequencing errors obscure the original unit patterns and make prediction difficult.
 

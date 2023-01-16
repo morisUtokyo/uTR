@@ -14,23 +14,23 @@ The above program creates a test data set consisting of widely different units w
     (AAAG)i(AG)j(AAAG)k (AAAG)i(AG)j(AGGG)k(AG)l(AAAG)m
     (AGGGG)i(AAAAGAAAGAGAGGG)j(AGGGG)k
     
-The variable (e.g., i, j, k, l, m) next to each unit in parentheses represents the number of unit occurrences. Mosaic TRs are harder to decompose when different units are more similar, and more units are present. To understand the hardness of the decomposition, we generate a variety of datasets of different average lengths for each mosaic TR pattern; i.e., variables in each pattern were set to 1000 combinations of random values ranging from 10 to 200.
+The variable (e.g., i, j, k, l, m) next to each unit in parentheses represents the number of unit occurrences. Mosaic TRs are harder to decompose when different units are more similar, and more units are present. Mosaic TRs are harder to decompose correctly when different units are more similar, and more distinct units are present.
+To understand the hardness of the decomposition, we generate a variety of datasets of different average lengths for each mosaic TR pattern; i.e., variables in each pattern are set to random values ranging from 10 to 200.
 The program in the following directory generates these datasets.
 
     gendata/
 
-To see how sequencing errors affect the prediction of the original mosaic TR patterns, strings in each dataset were replaced with random sequencing errors (substitutions, insertions, and deletions) at the rate of 0%, 1%, 3%, 5%, 10%, and 15%.
-Precisely, for example, when a mosaic TR has three units (U)i(V)j(W)k, all of the three units need to be predicted nearly correctly, and a series of units (U)i is accurate if the value of i differs by at most X% (e.g., 0%, 1%, 2%, and 3%) of the true value, which we call an allowance. 
-The mitigation condition (e.g., 1%, 2%, and 3%) is reasonable and necessary because when to handle two homologous units (i.e., AAG and AG), correctly determining the boundary between two similar units becomes ambiguous (especially in the presence of sequencing errors).
+To see how sequencing errors affect the prediction of the original mosaic TR patterns, letters of strings in each dataset are modified at random by sequencing errors (substitutions, insertions, and deletions) at the rate of 0%, 1%, 3%, 5%, 10%, and 15%.
+Precisely, for example, when a mosaic TR has three units (U)i(V)j(W)k, all of the three units need to be predicted nearly correctly, and a series of units (U)i is accurate if the value of i differs by at most X% (e.g., 0%, 1%, 2%, and 3%) of the true value,  where we call X an allowance.
+Accuracy increases by setting allowance X to a larger value, and this mitigation is reasonable and necessary when dealing with two homologous units (i.e., AAG and AG) because it becomes ambiguous to correctly determine the boundary between two similar units in the presence of sequencing errors.
 
-The program compares the prediction accuracy of uTR with TRF (Version 4.09) and RepeatMasker (version open-4.0.7) in the presence of sequencing errors.
-TRF sometimes returns a single most likely mosaic TR, but it typically outputs a number of tandem repeats, some of which overlap each other and demands us to select a series of non-overlapping TRs, which is a nontrivial task to do.
-RepeatMasker partly solves this problem because RepeatMasker uses TRF to generate overlapping TRs first, selects a better series of non-overlapping TRs, and treats it as a mosaic TR.
+The program compares the prediction accuracy of uTR with TRF (Version 4.09) and RepeatMasker (version open-4.0.7).
+The program uses RepeatMasker with default parameter settings (-e hmmer -noint -pa 4 -div 0 -xsmall) and TRF with default parameter settings except for lowering the minimum alignment score from 50 to 10 (i.e., 2 7 7 80 10 10 1000 -h -ngs) in order to detect small TRs with 10 or more units in our benchmark datasets.
+TRF sometimes returns a single most likely mosaic TR, but it often outputs a number of tandem repeats some of which overlap each other.
+To find a mosaic TR, a series of non-overlapping TRs has to be selected, which is actually solved by RepeatMasker.
+Therefore, RepeatMasker seems to be better suited to detect mosaic TRs than TRFs.
 
 For each of eight mosaic TR patterns, the program considers six sequencing error rates, and creates a total of 48 ($=8 \times 6$) datasets with 1000 strings.
-The program uses RepeatMasker with default parameter settings (-e hmmer -noint -pa 4 -div 0 -xsmall) and TRF with default parameter settings except for lowering the minimum alignment score from 50 to 10 (i.e., 2 7 7 80 10 10 1000 -h -ngs) in order to detect small TRs with 10 or more units in our benchmark datasets.
-
-To define the accuracy of prediction by each method, the predicted number of unit occurrences is allowed to differ by at most X% of the true value, where allowance X is set to 0%, 1%, 2%, or 3%.
 Programs in the following subdirectories evaluate the accuracy of uTR, RepeatMasker, and TRF in terms of the given allowance.
 
     check_uTR/ 
@@ -61,5 +61,5 @@ In the directory tmp, the Excel table named
     tmp/accuracy_time.xlsx 
 
 summaries the accuracy and wall clock time.
-uTR outperformed RepeatMasker and TRF in terms of prediction accuracy, and this is especially true when mosaic TRs have three or more series of units.
+In most cases, uTR outperformed RepeatMasker and TRF in terms of prediction accuracy, and this is especially true when mosaic TRs have three or more series of units.
 Prediction accuracy of uTR, RepeatMasker, and TRF tends to decrease as the sequencing error rate increases because sequencing errors obscure the original unit patterns and make prediction difficult.

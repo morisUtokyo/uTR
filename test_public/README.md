@@ -2,11 +2,11 @@
 
 For comparing uTR, RepeatMasker, and TRF using synthetic datasets, first compile all codes by executing:
 
-> bash make.sh
+    bash make.sh
 
 To compare the performance (in terms of accuracy and wall clock time) of uTR, RepeatMasker, and TRF, execute:
 
-> bash test.sh
+    bash test.sh
 
 The above program creates a test data set consisting of widely different units with typical mosaic TRs present in the human genome:
 
@@ -39,7 +39,7 @@ For example, the top five lines of the accuracy_uTR_allowance0.02.txt are:
 The first row means that of 1000 mosaic TR pattern (AC)i(AG)j, where the values of i and j are selected from 10 to 200 at random, 992 are predicted correctly by uTR when the allowance is set to 0.02, and the average length is 414. 
 In the directory tmp, the Excel table named 
 
-> accuracy_time.xlsx 
+    accuracy_time.xlsx 
 
 summaries the accuracy and wall clock time.
 uTR outperformed RepeatMasker and TRF in terms of prediction accuracy, and this is especially true when mosaic TRs have three or more series of units.

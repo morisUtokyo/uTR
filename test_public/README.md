@@ -32,7 +32,11 @@ When tool T (uTR, RM, or TRF) is used with allowance X (0%, 1%, 2%, or 3%), the 
     tmp/accuracy_T_allowanceX.txt 
 
 is generated in the directory tmp.
-For example, the top five lines of the tmp/accuracy_uTR_allowance0.02.txt are:
+For example, the top five lines of the 
+
+    tmp/accuracy_uTR_allowance0.02.txt 
+
+are:
 
     AC_AG_10_200_0.0 992 1000 414
     ACC_GTT_10_200_0.0 998 1000 617

@@ -9,6 +9,7 @@
 #include <getopt.h>
 
 #define BLK 4096
+#define OCC_DIFF 1
 #define DEBUG
 
 void rotate(int start, char *s1, int n1, char *rotated_s1){
@@ -52,7 +53,7 @@ void trim_dup(char *pat){
     }
 }
 
-int process_one_TR(char *prev_pat, struct unitStruct *unit_list_RM, int j, int print_each_TR){
+int process_one_TR(char *prev_pat, struct unitStruct *unit_list_RM, int j, int print_each_TR, float allowance){
     
     // For example, remove "_1" in (AC)174(AG)440_1 that is appended to distinguish its duplicate (AC)174(AG)440
     trim_dup(prev_pat);
@@ -81,7 +82,11 @@ int process_one_TR(char *prev_pat, struct unitStruct *unit_list_RM, int j, int p
                     strlen(unit_list[i].string),
                     unit_list_RM[i].string,
                     strlen(unit_list_RM[i].string));
-            if(string_match == 1 && diff <= 1){}
+            
+            int th = ceil(unit_list[i].len * allowance)+1;
+            if(string_match == 1 && diff <= th){}
+            //if(string_match == 1 && diff <= OCC_DIFF){}
+                // allow at most OCC_DIFF differences
             else{
                 match=0; break;
             }
@@ -108,13 +113,14 @@ int main(int argc, char *argv[])
         
     int opt;
     char inputFile[BLK], outputFile[BLK];
+    float allowance = 0.1; // default
     int print_each_TR=0;
-    while ((opt = getopt(argc, argv, "i:o:p")) != -1) {
+    while ((opt = getopt(argc, argv, "i:a:p")) != -1) {
         switch(opt){
             case 'i':
                 strcpy(inputFile,optarg); break;
-            //case 'o':
-            //    strcpy(outputFile,optarg); break;
+            case 'a':
+                sscanf(optarg, "%f", &allowance); break;
             case 'p':
                 print_each_TR = 1; break;
             default:
@@ -144,7 +150,7 @@ int main(int argc, char *argv[])
                pat,&lenTR,&beginUnit,&endUnit,&lenUnit,unit,annotation);
         if(strcmp(prev_pat,pat)!=0 && strcmp(prev_pat,"")!=0)
         {
-            match = process_one_TR(prev_pat, unit_list_RM, j, print_each_TR);
+            match = process_one_TR(prev_pat, unit_list_RM, j, print_each_TR, allowance);
             strcpy(prev_pat, pat);
             j=0;
             count_all++;
@@ -155,11 +161,11 @@ int main(int argc, char *argv[])
         strcpy(prev_pat, pat);
         j++;
     }
-    match = process_one_TR(prev_pat, unit_list_RM, j, print_each_TR);
+    match = process_one_TR(prev_pat, unit_list_RM, j, print_each_TR, allowance);
     count_all++;
     if(match == 1) count_match++;
     
-    printf("%d\t%d\n", count_match, count_all);
+    printf("%d/%d\n", count_match, count_all);
     
     fclose(fp_in);
 

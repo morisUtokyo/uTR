@@ -26,25 +26,28 @@ char another_char(char c){
     char c1;
     for(;;){
         switch(genrand_int32()%4){
-            case 0: c1='A';
-            case 1: c1='C';
-            case 2: c1='G';
-            case 3: c1='T';
+            case 0: c1='A'; break;
+            case 1: c1='C'; break;
+            case 2: c1='G'; break;
+            case 3: c1='T'; break;
         }
-        if(c!=c1) return(c1);
+        if(c!=c1)
+            return(c1);
     }
 }
 
 float put_errors(char *st, float error_ratio){
     char *tmp_st = (char *) malloc( sizeof(char) * ST_LEN );
-    int i, j;
+    int i, j, len_st;
     for(i=0; st[i]!='\0'; i++)
         tmp_st[i] = st[i];
     tmp_st[i]='\0';
+    len_st=i;
     
     int num_errors=0;
 
-    for(i=0, j=0; tmp_st[i]!='\0'; ){
+
+    for(i=0, j=0; i<len_st; ){
         if( (genrand_int32() % 10000) < 10000*(error_ratio) ){
             switch(genrand_int32()%3){
                 case 0: st[++j] = tmp_st[i++]; j++; break; // insertion
@@ -54,6 +57,7 @@ float put_errors(char *st, float error_ratio){
         }else
             st[j++] = tmp_st[i++];
     }
+    st[j]='\0';
     free(tmp_st);
     float discrepancy = (float)num_errors / i;
     return(discrepancy);

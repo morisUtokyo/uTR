@@ -4,11 +4,11 @@ For comparing uTR, RepeatMasker, and TRF using synthetic datasets　in terms of 
 
     bash make.sh
 
-To compare the performance (in terms of accuracy and wall clock time) of uTR, RepeatMasker, and TRF, execute:
+To compare uTR, RepeatMasker, and TRF, in terms of accuracy and wall clock time, execute:
 
     bash test.sh
 
-The above program creates a test data set consisting of widely different units with typical mosaic TRs present in the human genome:
+The above program creates a test mosaic TR data set consisting of widely different units that are typically present in the human genome:
 
     (AC)i(AG)j (ACC)i(GTT)j (AAG)i(AG)j (AAG)i(AGG)j (AAAG)i(AG)j 
     (AAAG)i(AG)j(AAAG)k (AAAG)i(AG)j(AGGG)k(AG)l(AAAG)m

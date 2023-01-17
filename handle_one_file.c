@@ -65,6 +65,7 @@ void malloc_Units(){
 void free_Units(){
     if(Units != NULL) free(Units);
     if(keyUnits != NULL) free(keyUnits);
+    if(Qreads != NULL) free(Qreads);
 }
 
 void malloc_GlobalVars(){
@@ -129,30 +130,30 @@ void return_one_read(FILE *fp, Read *currentRead){
     
     while (fgets(s, BLK, fp) != NULL) { // Feed a string of size BLK from fp into string s
         no_read = 0;
+        fflush(fp);
         
         if(s[0] == '>'){
-            if(read_cnt == -1){ // This is the first read
-                read_cnt = 0;
-                // Feed the ID of the current read into the ID of nextRead
-                for(i=1; s[i]!='\0' && s[i]!='\n' && i<BLK; i++)
-                    nextReadID[i-1] = s[i];
-                nextReadID[i-1] = '\0';
-                // Move on to feed the current string
-            }else{
+            if(read_cnt != -1){ // This is NOT the first read
                 // Set the ID of currentRead to the ID of nextRead
                 int j;
                 for(j=0;  nextReadID[j] != '\0'; j++)
                     currentRead->ID[j] = nextReadID[j];
                 currentRead->ID[j] = '\0';
-                // Feed the ID of the current read into the ID of nextRead
-                for(i=1; s[i]!='\0' && s[i]!='\n' && i<BLK; i++)
-                    nextReadID[i-1] = s[i];
-                nextReadID[i-1] = '\0';
+            }
+            // Feed the ID of the current read into the ID of nextRead
+            int shift;
+            if(s[1]==' ') shift=2; else shift=1;  // Skip the space at the head
+            for(i=0; s[shift+i]!='\0' && s[shift+i]!='\n' && s[shift+i]!='\r' && i<BLK; i++)
+                nextReadID[i] = s[shift+i];
+            nextReadID[i] = '\0';
+            
+            if(read_cnt == -1){ // This is the first read
+                read_cnt = 0;
+            }else{
+                read_cnt++;
                 // Finalize the currentRead string by appending '\0'
                 currentRead->string[cnt] = '\0';
                 currentRead->len = cnt;
-                read_cnt++;
-                //free(s);
                 return;
             }
         }else{
@@ -169,7 +170,6 @@ void return_one_read(FILE *fp, Read *currentRead){
             }
         }
     }
-    //free(s);
     if(no_read == 1){  // No reads
         currentRead->len = 0;
     }else{

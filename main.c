@@ -77,39 +77,27 @@ int main(int argc, char *argv[])
     int hide_IDs = 0;
     int regular_expression_only=0;
     int print_locus=0;
+    int print_input_annotation_as_it_is=0;
     int opt;
     
     MAX_DIS_RATIO = MAX_DIS_RATIO_DEFAULT;
     float ratio;
     
-    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:std")) != -1) {
+    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:stda")) != -1) {
         switch(opt){
-            case 'l':
-                strcpy(locus,optarg);   print_locus = 1;    break;
-            case 'f':
-                strcpy(inputFile,optarg);   inputFile_given = 1;    break;
-            case 'u':
-                strcpy(repUnit, optarg);    repUnit_given= 1;    break;
-            case 'h':
-                strcpy(hapFile,optarg);
-                build_Haps(hapFile); //print_Haps();
-                hapFile_given = 1;    break;
-            case 'o':
-                strcpy(outputFile, optarg); print_EDDC = 1; break;
-            case 'i':
-                strcpy(tableFile, optarg);  print_table = 1; break;
-            case 'r':
-                sscanf(optarg, "%f", &ratio);
-                MAX_DIS_RATIO = ratio;
-                break;
-            case 't':
-                print_time = 1; break;
-            case 's':
-                hide_IDs = 1; break;
-            case 'd':
-                regular_expression_only = 1; break;
+            case 'l': strcpy(locus,optarg);       print_locus = 1;    break;
+            case 'f': strcpy(inputFile,optarg);   inputFile_given = 1;    break;
+            case 'u': strcpy(repUnit, optarg);    repUnit_given= 1;    break;
+            case 'h': strcpy(hapFile,optarg); build_Haps(hapFile); hapFile_given = 1;    break;
+            case 'o': strcpy(outputFile, optarg); print_EDDC = 1; break;
+            case 'i': strcpy(tableFile, optarg);  print_table = 1; break;
+            case 'r': sscanf(optarg, "%f", &ratio);   MAX_DIS_RATIO = ratio;  break;
+            case 't': print_time = 1; break;
+            case 's': hide_IDs = 1; break;
+            case 'd': regular_expression_only = 1; break;
+            case 'a': print_input_annotation_as_it_is = 1; break;
             default:
-                fprintf(stderr, "Usage: uTR -l <locus info> -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only)) -o <EDDC output file>\n");
+                fprintf(stderr, "Usage: uTR -l <locus info> -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only) -a (for testing accuracy) -o <EDDC output file>\n");
                 exit(EXIT_FAILURE);
         }
     }
@@ -134,9 +122,9 @@ int main(int argc, char *argv[])
     for(int i=0; repUnit[i]!='\0'; i++, repUnitLen=i){}
     
     int numQualifiedReads = 0;
-    char decomposition[MAX_READ_LENGTH];
-    char stat[MAX_READ_LENGTH];
-    char stat_table[MAX_READ_LENGTH];
+    char *decomposition = (char *) malloc(sizeof(char) * MAX_READ_LENGTH);
+    char *stat = (char *) malloc(sizeof(char) * MAX_READ_LENGTH);
+    char *stat_table = (char *) malloc(sizeof(char) * MAX_READ_LENGTH);
     char individualID[MAX_ID_LENGTH];
     char readID[MAX_ID_LENGTH];
     // Feed each read and make the database of units
@@ -158,48 +146,57 @@ int main(int argc, char *argv[])
             coverage_by_units(currentRead->string, MIN_reps);
             // Set Units[j].sumOccurrences to the tentative number of occurrences of each candidate unit by calling compute_sumOccurrences, count_occurrences (SA for short motifs), and count_occurrences_long_unit (DP for long motifs).
             if(0 < unit_cnt)
-                set_cover_greedy(ofp, currentRead, MIN_reps); // Select TOP_k_units units in a batch manner and put them into prio2unit, a local array
+                set_cover_greedy(currentRead, MIN_reps); // Select TOP_k_units units in a batch manner and put them into prio2unit, a local array
             // The annotation starts with a space " " !!!
             int numReads, diameter, radius, readlen;
             int return_sscanf = sscanf(currentRead->ID, " GroupSize = %d, Diameter = %d, RadiusFromCentroid = %d, CentroidReadName = %[^,],%[^,], CentroidReadLength = %d", &numReads, &diameter, &radius, individualID, readID, &readlen);
             if(return_sscanf == 0){
                 strcpy(individualID, "NA"); strcpy(readID, "NA"); numReads=1;
             }
+            
             if(0 < currentRead->numKeyUnits){ // Print reads with primary units
                 sprintf(stat, "");
                 sprintf(stat_table, "");
 
                 if(hide_IDs == 0)
-                    sprintf(stat, "(%s,%s,%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
+                    sprintf(stat, "(%s,%s,%d,%d,%d,%3.2f)", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
                 else
-                    sprintf(stat, "(%d,%d,%3.2f) ", currentRead->len, numReads, currentRead->discrepancy_ratio);
+                    sprintf(stat, "(%d,%d,%3.2f)", currentRead->len, numReads, currentRead->discrepancy_ratio);
                 sprintf(stat_table, "%s,%s (%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
                 
                 // Print annotation of the focal read
                 if(print_EDDC == 1){
-                    fprintf(ofp, ">");
-                    if(print_locus == 1)    fprintf(ofp, " %s", locus);
-                    fprintf(ofp, " %s", stat);
+                    fprintf(ofp, "> ");
+                    if(print_locus == 1)    fprintf(ofp, "#Locus %s ", locus);
+                    fprintf(ofp, "#Info %s ", stat);
                 }
                 if(print_table == 1)    fprintf(tfp, "%s", stat_table);
                
-                if(print_EDDC == 1 && regular_expression_only  == 0)
-                    fprintf(ofp, "%s ", currentRead->decomposition);
-                if(print_table == 1)
+                if(print_EDDC == 1 && regular_expression_only  == 0){
+                    fprintf(ofp, "#Decomp %s ", currentRead->decomposition);
+                    fflush(ofp);
+                }
+                if(print_table == 1){
                     fprintf(tfp, "%s ", currentRead->decomposition);
+                    fflush(tfp);
+                }
                 
                 put_qualified_read(currentRead, numQualifiedReads);
 
                 numQualifiedReads++;
                 if(print_EDDC == 1){    // Print the focal read
                     int int_readID;
-                    fprintf(ofp, "%s ", currentRead->RegExpression);
+                    fprintf(ofp, "#Pat %s ", currentRead->RegExpression);
                     // Print a pair of nearest SNVs
                     sscanf(readID, "read%d", &int_readID);
                     if(hapFile_given == 1)
-                        fprintf(ofp, "<%s>", query_hap(individualID, int_readID) );
+                        fprintf(ofp, "#Hap <%s> ", query_hap(individualID, int_readID) );
+                    // Print the input annotation
+                    if(print_input_annotation_as_it_is == 1)
+                        fprintf(ofp, "#Annotation %s ", currentRead->ID);
                     // Print the string with TR
                     fprintf(ofp, "\n%s\n", currentRead->string);
+                    fflush(ofp);
                 }
                 if(print_table == 1)
                     fprintf(tfp,"\n");
@@ -215,10 +212,11 @@ int main(int argc, char *argv[])
         printf(" #units=%d ", global_unit_cnt);
         for(int i=0; i<global_unit_cnt; i++){
             printf("(%s,%d) ", GlobalUnits[i].string, GlobalUnits[i].sumOccurrences);
-            if(print_EDDC == 1){ // Print primary units for EDDC algorithm
+            if(print_EDDC == 1 && print_input_annotation_as_it_is == 0){ // Print primary units for EDDC algorithm unless the mode of testing accuracy
                 fprintf(ofp, ">");
-                if(print_locus == 1)    fprintf(ofp, " %s", locus);
+                if(print_locus == 1)    fprintf(ofp, "#Locus %s", locus);
                 fprintf(ofp, " frequent unit. freq. = %d\n%s\n", GlobalUnits[i].sumOccurrences, GlobalUnits[i].string);
+                fflush(ofp);
             }
         }
         printf("\n");
@@ -227,6 +225,7 @@ int main(int argc, char *argv[])
     }
     fclose(fp);
     if(print_EDDC == 1) fclose(ofp);
+    if(print_table== 1) fclose(tfp);
     free_Units();
     free_GlobalVars();
     

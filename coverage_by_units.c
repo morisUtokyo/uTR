@@ -306,7 +306,9 @@ int unit_selection(int string_len, int *prio2unit, int MIN_number_repetitions){
     return(numKeyUnits);
 }
 
-void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
+#define DEBUG_set_cover_greedy
+
+void set_cover_greedy(Read *currentRead, int MIN_number_repetitions){
     // Solve the set cover problem in a greedy manner
     struct timeval s, e;    gettimeofday(&s, NULL);
     
@@ -320,17 +322,25 @@ void set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions){
     // Call string decomposer, Copy key units to allocated arrays
     currentRead->numKeyUnits = numKeyUnits;
     if(numKeyUnits == 0) return;
+
+    string_decomposer(currentRead, numKeyUnits, prio2unit, MIN_number_repetitions, 1);
     
-    for(int p=0; p<numKeyUnits; p++){
-        int len;
-        int j = prio2unit[p]; // 0 origin inxexing
-        for(len=0; Units[j].string[len] != '\0'; len++){
-            keyUnits[p].intString[len] = char2int(Units[j].string[len]);
-            keyUnits[p].string[len]    = Units[j].string[len];
+    // Compute major key units that occupy MIN_COVERAGE
+    int sumLen=0;
+    int revised_numKeyUnits;
+    for(int p=numKeyUnits-1; 0<=p; p--){
+        sumLen += Units[prio2unit[p]].sumOccurrences;
+        if( currentRead->len * MIN_COVERAGE < sumLen){
+            revised_numKeyUnits = numKeyUnits - p;
+            break;
         }
-        keyUnits[p].len = len;
     }
-    string_decomposer(currentRead, keyUnits, numKeyUnits, prio2unit, MIN_number_repetitions);
+    // Revise prio2unit
+    for(int j=0, i=numKeyUnits-revised_numKeyUnits; j<revised_numKeyUnits; j++, i++)
+        prio2unit[j] = prio2unit[i];
+    
+    numKeyUnits = revised_numKeyUnits;
+    string_decomposer(currentRead, numKeyUnits, prio2unit, MIN_number_repetitions, 1);
     
     gettimeofday(&e, NULL);
     time_set_cover_greedy += (e.tv_sec - s.tv_sec) + (e.tv_usec - s.tv_usec)*1.0E-6;

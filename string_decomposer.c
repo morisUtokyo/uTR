@@ -22,7 +22,8 @@ void reverse_ordering(int numKeyUnits, int* array){
     }
 }
 
-void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *prio2unit, int MIN_number_repetitions){
+void string_decomposer(Read *currentRead, int numKeyUnits, int *prio2unit, int MIN_number_repetitions, int smooth_mode){
+
     if(numKeyUnits < 1) return;
     // Although currentRead->intString[i] and keyUnits[b].intString[j] are 0-origin indexing, their matrix are 1-origin indexing to device wrap-around DP.
     
@@ -32,6 +33,16 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
     }
     fprintf(stderr, "%s (len=%d)\n", currentRead->string, currentRead->len);
 #endif
+    
+    for(int p=0; p<numKeyUnits; p++){
+        int len;
+        int j = prio2unit[p]; // 0 origin inxexing
+        for(len=0; Units[j].string[len] != '\0'; len++){
+            keyUnits[p].intString[len] = char2int(Units[j].string[len]);
+            keyUnits[p].string[len]    = Units[j].string[len];
+        }
+        keyUnits[p].len = len;
+    }
     
     int i, b, j, lenU;
     int lenR = currentRead->len;
@@ -45,7 +56,7 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
         bU += (lenR + 1) * lenU;
     }
     
-    int max_column_b[MAX_READ_LENGTH];
+    int *max_column_b = (int *) malloc(sizeof(int)*MAX_READ_LENGTH);
     
     max_column_b[0] = -1;
     int max_wrd = 0;
@@ -148,7 +159,8 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
         j = lenU;
     }
     
-    int blocks[MAX_READ_LENGTH+1];
+    int *blocks = (int *) malloc(sizeof(int)*(MAX_READ_LENGTH+1));
+    for(int x=0; x<MAX_READ_LENGTH+1; x++) blocks[x]=-1;
     int deleted = 0;    // Print block number if the character is not deleted.
     while(i > 0){
     //while(i > 0 && WrapDP[bU + lenU*i + j] > 0){
@@ -225,8 +237,9 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
         Units[prio2unit[b]].sumTandem = 0;
     }
 
+    if(smooth_mode == 1)    smooth(blocks, lenR, numKeyUnits);
     
-    char Decomp[MAX_READ_LENGTH];
+    char *Decomp = (char *) malloc(sizeof(char) * MAX_READ_LENGTH);
     sprintf(Decomp, "");
     int run = 0;
     int prevPrio = blocks[0];
@@ -260,8 +273,7 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
     randomQuickSort3(sumOcc2, prio2unit,  0, numKeyUnits-1);
     //reverse_ordering(numKeyUnits, prio2unit); // in an descending order
 
-
-    char decomposition[MAX_READ_LENGTH];
+    char *decomposition = (char *) malloc(sizeof(char) * MAX_READ_LENGTH);
     sprintf(decomposition, "");
     int total_valid_units = 0;
     //for(int p=0; 0<numKeyUnits; p++){
@@ -279,7 +291,7 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
     currentRead->numKeyUnits = total_valid_units;
     
     // Compute a decomposition or a list of blocks
-    char ListPrios[MAX_READ_LENGTH];
+    char *ListPrios = (char *) malloc(sizeof(char) * MAX_READ_LENGTH);
     // add the list of prios of all nucleotides
     sprintf(ListPrios, "");
     for(int i=0; i<lenR; i++)
@@ -287,17 +299,14 @@ void string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *
     
     currentRead->RegExpressionDecomp = 1;
     sprintf(currentRead->RegExpression, "%s", Decomp);
-    /*
-    int lenDecomp=0;
-    for(; Decomp[lenDecomp] !='\0'; lenDecomp++)
-    if(lenDecomp < 100){ // If the description length is 100 letters or less, we assume it is readable.
-        currentRead->RegExpressionDecomp = 1;
-        sprintf(currentRead->RegExpression, "%s", Decomp);
-    }else{
-        currentRead->RegExpressionDecomp = 0;
-        sprintf(currentRead->RegExpression, "%s", ListPrios);
-    }
-     */
+    
+    //comp_preciseRegExp(currentRead);
+    
+    free(blocks);
+    free(max_column_b);
+    free(Decomp);
+    free(decomposition);
+    free(ListPrios);
     
 #ifdef DEGUG_string_decomposer1
     fprintf(stderr, "%s\n\n", currentRead->RegExpression);

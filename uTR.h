@@ -37,16 +37,17 @@ float MAX_DIS_RATIO;
 
 //#define MIN_unit_occupancy_ratio  0.8 // 0.6
 // We discarded this parameter. Instead, we search for a set of units that minimizes the penalty.
-#define MIN_unit_length      2
-#define TOP_k_units 5 //10   // Print top k units for debugging
+#define MIN_unit_length 2
+#define TOP_k_units 5       // Print top k units for debugging
+#define MIN_COVERAGE 0.95   // Minimum coverage of a TR by key units
 
 // Internal variables and data structures
-#define MAX_NUMBER_READS    1000
+#define MAX_NUMBER_READS    10000
 #define MAX_READ_LENGTH     100000
 #define MAX_ID_LENGTH       1000
 #define BLK 4096
-#define MAX_NUMBER_UNITS    10000
-#define MAX_NUMBER_GLOBAL_UNITS    1000 //10000
+#define MAX_NUMBER_UNITS    3000000
+#define MAX_NUMBER_GLOBAL_UNITS    10000 //10000
 #define MAX_UNIT_LENGTH     20  // Units of length MAX_UNIT_LENGTH or less are generated inside this program for efficiency
 #define INTERNAL_UNIT_LENGTH  1000   // Users are allowed to input long representative units.
 int repUnitLen;
@@ -80,6 +81,8 @@ typedef struct{
     char RegExpression[MAX_READ_LENGTH]; // Decomposition (e.g., D=(AAAG)6,(AG)27,(AAAG)24 or list of prios (e.g., 0000000011111000111)
     int  RegExpressionDecomp; // 1 means a decomposition and 0 a list of prios
     char decomposition[MAX_READ_LENGTH];
+    //char pattern_string[MAX_READ_LENGTH]; // String of RegExpression
+    //char preciseRegExp[MAX_READ_LENGTH];  // Regular expression identical to the input string
 } Read;
 
 typedef struct{
@@ -143,11 +146,14 @@ void    put_repUnit(char *repUnit);
 void    SA_IS(unsigned char *s, int *SA, int n, int K, int cs);
 
 void    coverage_by_units(char *S, int MIN_number_repetitions);
-void    set_cover_greedy(FILE *ofp, Read *currentRead, int MIN_number_repetitions);
+void    set_cover_greedy(Read *currentRead, int MIN_number_repetitions);
 
-void    string_decomposer(Read *currentRead, Unit *keyUnits, int numKeyUnits, int *prio2unit, int MIN_number_repetitions);
+void    string_decomposer(Read *currentRead, int numKeyUnits, int *prio2unit, int MIN_number_repetitions, int smooth_mode);
 
 void    randomQuickSort3(int* target, int* Pos, int aLeft, int aRight);
+
+void    smooth(int *input_blocks, int len, int numKeyUnits);
+//void    comp_preciseRegExp(Read *currentRead);
 
 // Interface between C and C++ functions
 #ifndef __CSUB_H__

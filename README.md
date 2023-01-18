@@ -84,19 +84,19 @@ To reduce computation time, it is reasonable to generate smaller input Fasta fil
 
 cTR outputs the following information to the annotation of the representative read (with sampleID,readID) of each group, and uTR can feed the annotation. 
 
-    \>GroupSize = N, Diameter = D, RadiusFromCentroid = R, CentroidReadName =  sampleID,readID, CentroidReadLength = L
+    >GroupSize = N, Diameter = D, RadiusFromCentroid = R, CentroidReadName =  sampleID,readID, CentroidReadLength = L
 
 For example:
 
-    \> GroupSize = 10, Diameter = 4, RadiusFromCentroid = 4, CentroidReadName = sampleID,readID, CentroidReadLength = 166
+    > GroupSize = 10, Diameter = 4, RadiusFromCentroid = 4, CentroidReadName = sampleID,readID, CentroidReadLength = 166
 
 uTR parses the above information and outputs the annotation:
     
-    \> (ID,read1,166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] \<AAAG\>6\<AG\>25\<AAAG\>23
+    > (ID,read1,166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] <AAAG>6<AG>25<AAAG>23
 
 - (ID,read1,166,10,2,0.01): ID is the identifier of a sample, read1 is the name of a read collected from the sample, and the pair of ID and read1 is the centroid of a group of strings. 166 shows the length of the centroid, 10 is the number of elements in the group, 2 is the number of key repeat units in the centroid read, and 0.01 is the mismatch ratio between the read and the decomposition 
     
-    \<AAAG\>6\<AG\>25\<AAAG\>23 
+    <AAAG>6<AG>25<AAAG>23 
     
     of the above input string, which concatenates 6 copies of AAAG, 25 copies of AG, and 23 copies of AAAG.
 
@@ -114,11 +114,11 @@ uTR [-i output table file] [-sd] [-h input haplotype file]
     
 -s : Do not print the pair of sample identifier ID and the name of the read. 
 
-    \> (166,10,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] \<AAAG\>6\<AG\>25\<AAAG\>23
+    > (166,10,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] \<AAAG\>6\<AG\>25\<AAAG\>23
 
 -d : Print the decomposition only. For example, given -s and -d, we have: 
     
-    \> (166,10,0.01) \<AAAG\>6\<AG\>25\<AAAG\>23
+    > (166,10,0.01) \<AAAG\>6\<AG\>25\<AAAG\>23
 
 -h : Feed SNV information surrounding a input TR in a read; namely, a list of tuples of the form sampleID, readID, and a pair of SNV positions closest to the focal TR (e.g., 14882386|14883645, where two positions are separated by the bar "|"). For each read, the pair of nearest SNVs is put into the annotation of the read with tag #Hap.
 

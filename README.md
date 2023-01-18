@@ -92,29 +92,29 @@ For example:
 
 uTR parses the above information and outputs the annotation:
     
-    > (ID,read1,166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] <AAAG>6<AG>25<AAAG>23
+    > #Info (ID,read1,166,10,2,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] 
 
-- (ID,read1,166,10,2,0.01): ID is the identifier of a sample, read1 is the name of a read collected from the sample, and the pair of ID and read1 is the centroid of a group of strings. 166 shows the length of the centroid, 10 is the number of elements in the group, 2 is the number of key repeat units in the centroid read, and 0.01 is the mismatch ratio between the read and the decomposition \<AAAG\>6\<AG\>25\<AAAG\>23 of the above input string, which concatenates 6 copies of AAAG, 25 copies of AG, and 23 copies of AAAG.
+- #Info (ID,read1,166,10,2,0.01): ID is the identifier of a sample, read1 is the name of a read collected from the sample, and the pair of ID and read1 is the centroid of a group of strings. 166 shows the length of the centroid, 10 is the number of elements in the group, 2 is the number of key repeat units in the centroid read, and 0.01 is the mismatch ratio between the read and the decomposition \<AAAG\>6\<AG\>25\<AAAG\>23 of the above input string, which concatenates 6 copies of AAAG, 25 copies of AG, and 23 copies of AAAG.
 
-- [2 (0,AAAG,4,116,116) (1,AG,2,50,50)]: The first 2 shows the number of repeat units. In tuple (0,AAAG,4,116,116), 0 is the identifier of the unit, AAAG is the string of the unit, 4 is the unit length, 116 is the total bases in the unit occurrences, and the last 116 the total bases in the tandem repeats of the unit. Similarly, in tuple (1,AG,2,50,50), 1 is the identifier, AG the unit string, 2 the length of AG, 50 the total bases and the last 50 the total bases in the tandem repeats of the unit.
+- #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)]: The first 2 shows the number of repeat units. In tuple (0,AAAG,4,116,116), 0 is the identifier of the unit, AAAG is the string of the unit, 4 is the unit length, 116 is the total bases in the unit occurrences, and the last 116 the total bases in the tandem repeats of the unit. Similarly, in tuple (1,AG,2,50,50), 1 is the identifier, AG the unit string, 2 the length of AG, 50 the total bases and the last 50 the total bases in the tandem repeats of the unit.
 
 - At the end of the fasta file, all repeat units used in the decompositions of reads are appended. Each repeat unit is annotated with its occurrence frequency in reads.
 
 To process the above information associated with sampleID and readID, several input parameters can be used.
 
-uTR [-i output table file] [-sd] [-h input haplotype file]
+uTR [-sd] [-i output table file] [-h input haplotype file]
+    
+-s : Do not print the pair of sample identifier ID and the name of the read. 
+
+    > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] 
+
+-d : Print the decomposition only. For example, given -s and -d, we have: 
+    
+    > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 
 
 -i : Output a table file in which each line shows, for example: 
 
     nID,read1 (166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)]
-    
--s : Do not print the pair of sample identifier ID and the name of the read. 
-
-    > (166,10,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] <AAAG>6<AG>25<AAAG>23
-
--d : Print the decomposition only. For example, given -s and -d, we have: 
-    
-    > (166,10,0.01) <AAAG>6<AG>25<AAAG>23
 
 -h : Feed SNV information surrounding a input TR in a read; namely, a list of tuples of the form sampleID, readID, and a pair of SNV positions closest to the focal TR (e.g., 14882386|14883645, where two positions are separated by the bar "|"). For each read, the pair of nearest SNVs is put into the annotation of the read with tag #Hap.
 

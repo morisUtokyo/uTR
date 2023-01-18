@@ -76,9 +76,9 @@ The fasta file includes the following DNA sequences:
 - ZNF37A(control) hg38_dna range=chr10:38112731-38112826 pattern=(CTTTT)12(CTTGT)3(CTTTT)2
 
 
-## Handling a fasta file that cTR outputs.
+## Handling a fasta file output by cTR
 
-To reduce computation time, it is useful to generate smaller input Fasta files. For this purpose, cTR is useful because it clusters reads into groups of similar reads and is available at: 
+To reduce computation time, it is reasonable to generate smaller input Fasta files. For this purpose, cTR is useful because it clusters reads into groups of similar reads and is available at: 
 
     https://github.com/morisUtokyo/cTR 
 

@@ -110,11 +110,11 @@ uTR [-i output table file] [-sd] [-h input haplotype file]
     
 -s : Do not print the pair of sample identifier ID and the name of the read. 
 
-    > (166,10,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] \<AAAG\>6\<AG\>25\<AAAG\>23
+    > (166,10,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] <AAAG>6<AG>25<AAAG>23
 
 -d : Print the decomposition only. For example, given -s and -d, we have: 
     
-    > (166,10,0.01) \<AAAG\>6\<AG\>25\<AAAG\>23
+    > (166,10,0.01) <AAAG>6<AG>25<AAAG>23
 
 -h : Feed SNV information surrounding a input TR in a read; namely, a list of tuples of the form sampleID, readID, and a pair of SNV positions closest to the focal TR (e.g., 14882386|14883645, where two positions are separated by the bar "|"). For each read, the pair of nearest SNVs is put into the annotation of the read with tag #Hap.
 

@@ -158,39 +158,36 @@ int main(int argc, char *argv[])
                 sprintf(stat, "");
                 sprintf(stat_table, "");
 
+                put_qualified_read(currentRead, numQualifiedReads);
+                numQualifiedReads++;
+                
                 if(hide_IDs == 0)
                     sprintf(stat, "(%s,%s,%d,%d,%d,%3.2f)", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
                 else
                     sprintf(stat, "(%d,%d,%3.2f)", currentRead->len, numReads, currentRead->discrepancy_ratio);
                 sprintf(stat_table, "%s,%s (%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
                 
-                // Print annotation of the focal read
-                if(print_EDDC == 1){
-                    fprintf(ofp, "> ");
-                    if(print_locus == 1)    fprintf(ofp, "#Locus %s ", locus);
-                    fprintf(ofp, "#Info %s ", stat);
-                }
-                if(print_table == 1)    fprintf(tfp, "%s", stat_table);
-               
-                if(print_EDDC == 1 && regular_expression_only  == 0){
-                    fprintf(ofp, "#Decomp %s ", currentRead->decomposition);
-                    fflush(ofp);
-                }
                 if(print_table == 1){
+                    fprintf(tfp, "%s", stat_table);
                     fprintf(tfp, "%s ", currentRead->decomposition);
+                    fprintf(tfp,"\n");
                     fflush(tfp);
                 }
                 
-                put_qualified_read(currentRead, numQualifiedReads);
-
-                numQualifiedReads++;
+                // Print annotation of the focal read
                 if(print_EDDC == 1){    // Print the focal read
-                    int int_readID;
+                    fprintf(ofp, "> ");
+                    if(print_locus == 1)    fprintf(ofp, "#Locus %s ", locus);
+                    fprintf(ofp, "#Info %s ", stat);
+                    
                     fprintf(ofp, "#Pat %s ", currentRead->RegExpression);
                     // Print a pair of nearest SNVs
+                    int int_readID;
                     sscanf(readID, "read%d", &int_readID);
                     if(hapFile_given == 1)
                         fprintf(ofp, "#Hap <%s> ", query_hap(individualID, int_readID) );
+                    if(regular_expression_only  == 0)
+                        fprintf(ofp, "#Decomp %s ", currentRead->decomposition);
                     // Print the input annotation
                     if(print_input_annotation_as_it_is == 1)
                         fprintf(ofp, "#Annotation %s ", currentRead->ID);
@@ -198,8 +195,6 @@ int main(int argc, char *argv[])
                     fprintf(ofp, "\n%s\n", currentRead->string);
                     fflush(ofp);
                 }
-                if(print_table == 1)
-                    fprintf(tfp,"\n");
                 break;
             }
         }

@@ -21,8 +21,8 @@ uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus infor
 -u : Feed a single representative unit of a putative tandem repeat in the input read. If it is not specified, uTR automatically estimates tandem repeat units of length 20 nt or less. Long units (of length > 20nt, for example) can be computed by using mTR: 
 
     https://github.com/morisUtokyo/mTR 
-    
-    See the details of mTR:
+   
+See the details of mTR:
     
     https://academic.oup.com/bioinformatics/article/37/5/612/5919583
 

@@ -46,7 +46,7 @@ float MAX_DIS_RATIO;
 #define MAX_READ_LENGTH     100000
 #define MAX_ID_LENGTH       1000
 #define BLK 4096
-#define MAX_NUMBER_UNITS    3000000
+#define MAX_NUMBER_UNITS    100000
 #define MAX_NUMBER_GLOBAL_UNITS    10000 //10000
 #define MAX_UNIT_LENGTH     20  // Units of length MAX_UNIT_LENGTH or less are generated inside this program for efficiency
 #define INTERNAL_UNIT_LENGTH  1000   // Users are allowed to input long representative units.

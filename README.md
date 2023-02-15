@@ -9,10 +9,10 @@ uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus infor
     > SAND12(control,BAFME)
     AAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAATAAAATAAAATAAAATAAAATAAAATAAAATAAAAATGAACAAAA
 
--o : uTR outputs the input fasta file annotated with a tandem repeat pattern identified. In the running example, the annotation contains "#Pat \<AAAAT\>23", which shows a tandem repeat pattern, and "#Info (116,1,0.06)", where 116 shows the length of the DNA string, 1 means the number of unit is 1, and 0.06 is the divergence between the tandem repeat pattern and the string:
+-o : Output the input fasta file annotated with a tandem repeat pattern identified. In the running example, the annotation contains "#Pat \<AAAAT\>23", which shows a tandem repeat pattern, and "#Info (116,1,0.06)", where 116 shows the length of the DNA string, 1 means the number of unit is 1, and 0.06 is the divergence between the tandem repeat pattern and the string:
 
     > #Info (116,1,0.06) #Pat <AAAAT>23 #Annotation SAND12(control,BAFME)  
-    AAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAATAAAATAAAATAAAATAAAATAAAATAAAATAAAAATGAACAAAA
+    AAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAATAAAATAAAATAAAATAAAATAAAATAAAATAAAAATGAACAAAA    
 
 -l : Feed the locus information (e.g., chr8:118366813-118366928), which is added to the annotation of each string in the output fasta file with tag #Locus. For example:
 
@@ -102,7 +102,7 @@ uTR parses the above information and outputs the annotation:
 
 To process the above information associated with sampleID and readID, several input parameters can be used.
 
-uTR [-sd] [-i output table file] [-h input haplotype file]
+uTR [-sd] [-i output table file] [-p output a summary statistics with TR patterns] [-h input haplotype file]
     
 -s : Do not print the pair of sample identifier ID and the name of the read. 
 
@@ -115,7 +115,9 @@ uTR [-sd] [-i output table file] [-h input haplotype file]
 -i : Output a table file in which each line shows, for example: 
 
     nID,read1 (166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)]
+    
+-p: Output a summary statistics with tandem repeat patterns. It begins with the number of haplotypes with different tandem repeats and shows a list of tandem repeat patterns. For example, 
+
+    #haplotypes=1000 (166,10,0.01) <AAAG>6<AG>25<AAAG>23 ...
 
 -h : Feed SNV information surrounding a input TR in a read; namely, a list of tuples of the form sampleID, readID, and a pair of SNV positions closest to the focal TR (e.g., 14882386|14883645, where two positions are separated by the bar "|"). For each read, the pair of nearest SNVs is put into the annotation of the read with tag #Hap.
-
- 

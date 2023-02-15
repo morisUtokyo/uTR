@@ -24,6 +24,7 @@ void put_qualified_read(Read *currentRead, int i){
     //Qreads[i].mosaic_mode  = currentRead->mosaic_mode;
     Qreads[i].sumTandem    = currentRead->sumTandem;
     Qreads[i].discrepancy_ratio = currentRead->discrepancy_ratio;
+    strcpy(Qreads[i].RegExpression, currentRead->RegExpression);
     strcpy(Qreads[i].decomposition, currentRead->decomposition);
 }
 
@@ -67,6 +68,7 @@ int main(int argc, char *argv[])
     char hapFile[500];      // For the haplotype file name
     char outputFile[500];   // For the output file name
     char tableFile[500];    // For the table file name (repRead, information)
+    char statTRpatFile[500];// For the file name of statistics with tandem repeat patterns
     char locus[500];        // For storing the locus ID (e.g., 1234:chr1:456-567)
     int inputFile_given = 0;
     int repUnit_given = 0;
@@ -74,6 +76,7 @@ int main(int argc, char *argv[])
     int print_time = 0;
     int print_EDDC = 0;
     int print_table = 0;
+    int print_statTRpat = 0;
     int hide_IDs = 0;
     int regular_expression_only=0;
     int print_locus=0;
@@ -83,7 +86,7 @@ int main(int argc, char *argv[])
     MAX_DIS_RATIO = MAX_DIS_RATIO_DEFAULT;
     float ratio;
     
-    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:stda")) != -1) {
+    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:p:stda")) != -1) {
         switch(opt){
             case 'l': strcpy(locus,optarg);       print_locus = 1;    break;
             case 'f': strcpy(inputFile,optarg);   inputFile_given = 1;    break;
@@ -91,13 +94,14 @@ int main(int argc, char *argv[])
             case 'h': strcpy(hapFile,optarg); build_Haps(hapFile); hapFile_given = 1;    break;
             case 'o': strcpy(outputFile, optarg); print_EDDC = 1; break;
             case 'i': strcpy(tableFile, optarg);  print_table = 1; break;
+            case 'p': strcpy(statTRpatFile, optarg);  print_statTRpat = 1; break;
             case 'r': sscanf(optarg, "%f", &ratio);   MAX_DIS_RATIO = ratio;  break;
             case 't': print_time = 1; break;
             case 's': hide_IDs = 1; break;
             case 'd': regular_expression_only = 1; break;
             case 'a': print_input_annotation_as_it_is = 1; break;
             default:
-                fprintf(stderr, "Usage: uTR -l <locus info> -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only) -a (for testing accuracy) -o <EDDC output file>\n");
+                fprintf(stderr, "Usage: uTR -l <locus info> -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only) -a (for testing accuracy) -o <EDDC output file> -p <TR patterns>\n");
                 exit(EXIT_FAILURE);
         }
     }
@@ -114,6 +118,8 @@ int main(int argc, char *argv[])
     if(print_EDDC == 1) ofp = fopen(outputFile, "w"); else ofp = stdout;
     FILE *tfp;
     if(print_table== 1) tfp = fopen(tableFile, "w");  else tfp = stdout;
+    FILE *pfp;
+    if(print_statTRpat== 1) pfp = fopen(statTRpatFile, "w");  else pfp = stdout;
     
     Read *currentRead = malloc(sizeof(Read));
     if(currentRead==NULL){ fprintf(stderr, "Failure to malloc currentRead\n"); exit(EXIT_FAILURE); }
@@ -203,6 +209,13 @@ int main(int argc, char *argv[])
         printf(" #haplotypes=%d", numQualifiedReads);
         for(int i=0; i<numQualifiedReads; i++){
             printf(" (%s,%s,%d,%d,%d,%3.2f) %s", Qreads[i].individualID, Qreads[i].readID, Qreads[i].len, Qreads[i].numReads, Qreads[i].numKeyUnits, Qreads[i].discrepancy_ratio, Qreads[i].decomposition);
+        }
+        // Print the statistics with TR patterns if(print_statTRpat== 1)
+        if(print_statTRpat == 1){
+            fprintf(pfp, " #haplotypes=%d", numQualifiedReads);
+            for(int i=0; i<numQualifiedReads; i++){
+                fprintf(pfp, " (%d,%d,%3.2f) %s", Qreads[i].len, Qreads[i].numReads, Qreads[i].discrepancy_ratio, Qreads[i].RegExpression);
+            }
         }
         printf(" #units=%d ", global_unit_cnt);
         for(int i=0; i<global_unit_cnt; i++){

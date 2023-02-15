@@ -94,6 +94,7 @@ typedef struct{
     float discrepancy_ratio;
     char individualID[MAX_ID_LENGTH];
     char readID[MAX_ID_LENGTH];
+    char RegExpression[MAX_READ_LENGTH];
     char decomposition[MAX_READ_LENGTH];
 } QualifiedRead;
 QualifiedRead *Qreads;

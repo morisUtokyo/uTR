@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     int print_EDDC = 0;
     int print_table = 0;
     int print_statTRpat = 0;
-    int hide_IDs = 0;
+    int hide_IDs = 1;   // hide IDs by default
     int regular_expression_only=0;
     int print_locus=0;
     int print_input_annotation_as_it_is=0;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
             case 'p': strcpy(statTRpatFile, optarg);  print_statTRpat = 1; break;
             case 'r': sscanf(optarg, "%f", &ratio);   MAX_DIS_RATIO = ratio;  break;
             case 't': print_time = 1; break;
-            case 's': hide_IDs = 1; break;
+            case 's': hide_IDs = 0; break;  // Print IDs
             case 'd': regular_expression_only = 1; break;
             case 'a': print_input_annotation_as_it_is = 1; break;
             default:
@@ -213,8 +213,14 @@ int main(int argc, char *argv[])
         // Print the statistics with TR patterns if(print_statTRpat== 1)
         if(print_statTRpat == 1){
             fprintf(pfp, " #haplotypes=%d", numQualifiedReads);
-            for(int i=0; i<numQualifiedReads; i++){
-                fprintf(pfp, " (%d,%d,%3.2f) %s", Qreads[i].len, Qreads[i].numReads, Qreads[i].discrepancy_ratio, Qreads[i].RegExpression);
+            if(hide_IDs == 1){
+                for(int i=0; i<numQualifiedReads; i++){
+                    fprintf(pfp, " (%d,%d,%3.2f) %s", Qreads[i].len, Qreads[i].numReads, Qreads[i].discrepancy_ratio, Qreads[i].RegExpression);
+                }
+            }else{
+                for(int i=0; i<numQualifiedReads; i++){
+                    fprintf(pfp, " (%s,%s,%d,%d,%3.2f) %s", Qreads[i].individualID, Qreads[i].readID, Qreads[i].len, Qreads[i].numReads, Qreads[i].discrepancy_ratio, Qreads[i].RegExpression);
+                }
             }
         }
         printf(" #units=%d ", global_unit_cnt);

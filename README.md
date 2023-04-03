@@ -2,7 +2,7 @@
 The program uTR decomposes a DNA string into mosaic tandem repeats with different repeat units.
 
 ## Usage
-uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus information] [-u input representative unit string] [-r maximum discrepancy ratio] [-t]
+uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus information] [-u input representative unit string] [-r maximum discrepancy ratio] [-t] [-s]
 
 -f : Feed a fasta file. For example:
 
@@ -26,7 +26,9 @@ See the details of mTR:
     
     https://academic.oup.com/bioinformatics/article/37/5/612/5919583
 
--t : Output the wall clock time to process each read in the input fasta file.　
+-t : Output the wall clock time to process each read in the input fasta file.
+
+-s : Output personal ID and read ID, which are not output by default, at the beginning of #Info (e.g., (individual_ID,read_ID,116,1,0.06) ) when uTR feeds fasta files of reads that are clustered by cTR. 
 
 -r : Give a maximum threshold on the mismatch ratio between the representaitve unit and a tandem repeat of the unit. No tandem repeat is output if the mismatch ratio exceeds this threshold. The default parameter is 0.3, which is set in uTR.h by:
 

@@ -78,9 +78,9 @@ int main(int argc, char *argv[])
     int print_table = 0;
     int print_statTRpat = 0;
     int hide_IDs = 1;   // hide IDs by default
-    int regular_expression_only=0;
+    int regular_expression_only=1;  // Donot print decomposition
     int print_locus=0;
-    int print_input_annotation_as_it_is=0;
+    int print_input_annotation_as_it_is=1;
     int opt;
     
     MAX_DIS_RATIO = MAX_DIS_RATIO_DEFAULT;

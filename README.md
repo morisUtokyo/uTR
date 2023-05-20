@@ -11,7 +11,7 @@ uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus infor
 
 -o : Output the input fasta file annotated with a tandem repeat pattern identified. In the running example, the annotation contains "#Pat \<AAAAT\>23", which shows a tandem repeat pattern, and "#Info (116,1,0.06)", where 116 shows the length of the DNA string, 1 means the number of unit is 1, and 0.06 is the divergence between the tandem repeat pattern and the string:
 
-    > #Info (116,1,0.06) #Pat <AAAAT>23 #Annotation SAND12(control,BAFME)  
+    > #Info (116,1,0.06) #Pat <AAAAT>23 #Decomp [1 (0,AAAAT,5,116,116)] 
     AAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAATAAAATAAAATAAAATAAAATAAAATAAAATAAAAATGAACAAAA    
 
 -l : Feed the locus information (e.g., chr8:118366813-118366928), which is added to the annotation of each string in the output fasta file with tag #Locus. For example:
@@ -94,9 +94,9 @@ For example:
 
 uTR parses the above information and outputs the annotation:
     
-    > #Info (ID,read1,166,10,2,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] 
+    > #Info (166,10,2,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] 
 
-- #Info (ID,read1,166,10,2,0.01): ID is the identifier of a sample, read1 is the name of a read collected from the sample, and the pair of ID and read1 is the centroid of a group of strings. 166 shows the length of the centroid, 10 is the number of elements in the group, 2 is the number of key repeat units in the centroid read, and 0.01 is the mismatch ratio between the read and the decomposition \<AAAG\>6\<AG\>25\<AAAG\>23 of the above input string, which concatenates 6 copies of AAAG, 25 copies of AG, and 23 copies of AAAG.
+- #Info (166,10,2,0.01): 166 shows the length of the centroid, 10 is the number of elements in the group, 2 is the number of key repeat units in the centroid read, and 0.01 is the mismatch ratio between the read and the decomposition \<AAAG\>6\<AG\>25\<AAAG\>23 of the above input string, which concatenates 6 copies of AAAG, 25 copies of AG, and 23 copies of AAAG.
 
 - #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)]: The first 2 shows the number of repeat units. In tuple (0,AAAG,4,116,116), 0 is the identifier of the unit, AAAG is the string of the unit, 4 is the unit length, 116 is the total bases in the unit occurrences, and the last 116 the total bases in the tandem repeats of the unit. Similarly, in tuple (1,AG,2,50,50), 1 is the identifier, AG the unit string, 2 the length of AG, 50 the total bases and the last 50 the total bases in the tandem repeats of the unit.
 
@@ -106,20 +106,26 @@ To process the above information associated with sampleID and readID, several in
 
 uTR [-sd] [-i output table file] [-p output a summary statistics with TR patterns] [-h input haplotype file]
     
--s : Do not print the pair of sample identifier ID and the name of the read. 
+-s : Print the pair of sample identifier ID and the name of the read (say, read1) collected from the sample, and the pair of ID and read1 is the centroid of a group of strings. If ID and read name are unavailable, NAs are output.
 
-    > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] 
+    > #Info (ID,read1,166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] 
 
 -d : Print the decomposition only. For example, given -s and -d, we have: 
     
     > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 
+    
+-a : Print the input annotation as it is
+
+    > #Info (ID,read1,166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] #Annotation <input annotation>
 
 -i : Output a table file in which each line shows, for example: 
 
     nID,read1 (166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)]
     
--p: Output a summary statistics with tandem repeat patterns. It begins with the number of haplotypes with different tandem repeats and shows a list of tandem repeat patterns. For example, 
+-p : Output a summary statistics with tandem repeat patterns to the file name following "-p". It begins with the number of haplotypes with different tandem repeats and shows a list of tandem repeat patterns. For example, 
 
     #haplotypes=1000 (166,10,0.01) <AAAG>6<AG>25<AAAG>23 ...
+    
+-x : Output the above summary statistics to the standard output. 
 
 -h : Feed SNV information surrounding a input TR in a read; namely, a list of tuples of the form sampleID, readID, and a pair of SNV positions closest to the focal TR (e.g., 14882386|14883645, where two positions are separated by the bar "|"). For each read, the pair of nearest SNVs is put into the annotation of the read with tag #Hap.

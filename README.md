@@ -27,8 +27,14 @@ See the details of mTR:
     https://academic.oup.com/bioinformatics/article/37/5/612/5919583
 
 -t : Output the wall clock time to process each read in the input fasta file.
+    
+-a : Print the input annotation as it is
 
--s : Output personal ID and read ID, which are not output by default, at the beginning of #Info (e.g., (individual_ID,read_ID,116,1,0.06) ) when uTR feeds fasta files of reads that are clustered by cTR. 
+    > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] #Annotation <input annotation>
+    
+-d : Do not print the decomposition. 
+    
+    > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 
 
 -r : Give a maximum threshold on the mismatch ratio between the representaitve unit and a tandem repeat of the unit. No tandem repeat is output if the mismatch ratio exceeds this threshold. The default parameter is 0.3, which is set in uTR.h by:
 
@@ -104,19 +110,11 @@ uTR parses the above information and outputs the annotation:
 
 To process the above information associated with sampleID and readID, several input parameters can be used.
 
-uTR [-sd] [-i output table file] [-p output a summary statistics with TR patterns] [-h input haplotype file]
+uTR [-sx] [-i output table file] [-p output a summary statistics with TR patterns] [-h input haplotype file]
     
 -s : Print the pair of sample identifier ID and the name of the read (say, read1) collected from the sample, and the pair of ID and read1 is the centroid of a group of strings. If ID and read name are unavailable, NAs are output.
 
     > #Info (ID,read1,166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] 
-
--d : Print the decomposition only. For example, given -s and -d, we have: 
-    
-    > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 
-    
--a : Print the input annotation as it is
-
-    > #Info (ID,read1,166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] #Annotation <input annotation>
 
 -i : Output a table file in which each line shows, for example: 
 

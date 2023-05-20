@@ -43,7 +43,7 @@ float MAX_DIS_RATIO;
 
 // Internal variables and data structures
 #define MAX_NUMBER_READS    10000
-#define MAX_READ_LENGTH     100000
+#define MAX_READ_LENGTH     20000 //100000
 #define MAX_ID_LENGTH       1000
 #define BLK 4096
 #define MAX_NUMBER_UNITS    100000

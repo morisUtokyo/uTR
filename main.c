@@ -78,15 +78,17 @@ int main(int argc, char *argv[])
     int print_table = 0;
     int print_statTRpat = 0;
     int hide_IDs = 1;   // hide IDs by default
-    int regular_expression_only=1;  // Donot print decomposition
+    int regular_expression_only=0;  // Donot print decomposition
     int print_locus=0;
-    int print_input_annotation_as_it_is=1;
+    int print_input_annotation_as_it_is=0;
+    int print_stdout_decomp = 0; 
+
     int opt;
     
     MAX_DIS_RATIO = MAX_DIS_RATIO_DEFAULT;
     float ratio;
     
-    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:p:stda")) != -1) {
+    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:p:stdax")) != -1) {
         switch(opt){
             case 'l': strcpy(locus,optarg);       print_locus = 1;    break;
             case 'f': strcpy(inputFile,optarg);   inputFile_given = 1;    break;
@@ -100,6 +102,7 @@ int main(int argc, char *argv[])
             case 's': hide_IDs = 0; break;  // Print IDs
             case 'd': regular_expression_only = 1; break;
             case 'a': print_input_annotation_as_it_is = 1; break;
+            case 'x': print_stdout_decomp = 1; break;
             default:
                 fprintf(stderr, "Usage: uTR -l <locus info> -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only) -a (for testing accuracy) -o <EDDC output file> -p <TR patterns>\n");
                 exit(EXIT_FAILURE);
@@ -110,7 +113,8 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     
-    struct timeval s, e;    gettimeofday(&s, NULL);
+    struct timeval s, e;
+    gettimeofday(&s, NULL);
     float time_get_non_self_overlapping_prefixes = time_coverage_by_units = time_set_cover_greedy = 0;
     
     FILE *fp = init_handle_one_file(inputFile);
@@ -206,9 +210,11 @@ int main(int argc, char *argv[])
         }
     }
     if(0 < numQualifiedReads){
-        printf(" #haplotypes=%d", numQualifiedReads);
+	if(print_stdout_decomp == 1)
+	        printf(" #haplotypes=%d", numQualifiedReads);
         for(int i=0; i<numQualifiedReads; i++){
-            printf(" (%s,%s,%d,%d,%d,%3.2f) %s", Qreads[i].individualID, Qreads[i].readID, Qreads[i].len, Qreads[i].numReads, Qreads[i].numKeyUnits, Qreads[i].discrepancy_ratio, Qreads[i].decomposition);
+	    if(print_stdout_decomp == 1)
+	            printf(" (%s,%s,%d,%d,%d,%3.2f) %s", Qreads[i].individualID, Qreads[i].readID, Qreads[i].len, Qreads[i].numReads, Qreads[i].numKeyUnits, Qreads[i].discrepancy_ratio, Qreads[i].decomposition);
         }
         // Print the statistics with TR patterns if(print_statTRpat== 1)
         if(print_statTRpat == 1){
@@ -223,9 +229,13 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        printf(" #units=%d ", global_unit_cnt);
+        if(print_stdout_decomp == 1){
+            printf(" #units=%d ", global_unit_cnt);
+        }
         for(int i=0; i<global_unit_cnt; i++){
-            printf("(%s,%d) ", GlobalUnits[i].string, GlobalUnits[i].sumOccurrences);
+            if(print_stdout_decomp == 1){
+                printf("(%s,%d) ", GlobalUnits[i].string, GlobalUnits[i].sumOccurrences);
+            }
             if(print_EDDC == 1 && print_input_annotation_as_it_is == 0){ // Print primary units for EDDC algorithm unless the mode of testing accuracy
                 fprintf(ofp, ">");
                 if(print_locus == 1)    fprintf(ofp, "#Locus %s", locus);
@@ -233,9 +243,9 @@ int main(int argc, char *argv[])
                 fflush(ofp);
             }
         }
-        printf("\n");
+        if(print_stdout_decomp == 1){ printf("\n"); }
     }else{
-        printf(" #haplotypes=0\n");
+        if(print_stdout_decomp == 1){ printf(" #haplotypes=0\n"); }
     }
     fclose(fp);
     if(print_EDDC == 1) fclose(ofp);

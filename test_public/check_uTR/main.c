@@ -10,8 +10,36 @@
 #define OCC_DIFF 1
 
 //#define DEBUG
+
+void rotate(int start, char *s1, int n1, char *rotated_s1){
+    for(int i=0; i<n1; i++){
+        rotated_s1[i] = s1[ (start + i ) % n1 ];
+    }
+    rotated_s1[n1] = '\0';
+}
+
+int rotate_match(char *s0, int n0, char *s1, int n1){
+    // Return 1 if s0==s2, and 0 otherwise
+    char *rotated_s1 = malloc(sizeof(char) * (n1+1));
+    
+    int match=0;
+    if(n0!=n1)
+        match=0;
+    else{
+        // Find any rotation of s1 that matches s0
+        for(int st=0; st<n0; st++){
+            rotate(st, s1, n1, rotated_s1);
+            if(strcmp(s0, rotated_s1) == 0){
+                match=1; break;
+            }
+        }
+    }
+    free(rotated_s1);
+    return(match);
+}
+
+
 int pattern_cmp(char *s1_pat, char *s2_pat, float allowance){
-//int pattern_cmp(char *s1_pat, char *s2_pat, int occ_diff){
     char unit1[100], unit2[100];
     int occ1, occ2;
     
@@ -28,9 +56,8 @@ int pattern_cmp(char *s1_pat, char *s2_pat, float allowance){
         sscanf(s1_pat, "%s %d%[^\0]%*c", unit1, &occ1, s1_pat);
         sscanf(s2_pat, "%s %d%[^\0]%*c", unit2, &occ2, s2_pat);
         // The two sets of units are different.
-        if(strcmp(unit1,unit2) != 0 ){
-            match = 0; break;
-        }
+        if(rotate_match(unit1, strlen(unit1), unit2, strlen(unit2)) == 0 ){ match = 0; break; }
+        //if(strcmp(unit1,unit2) != 0 ){ match = 0; break; }
         int d = abs(occ1 - occ2);
         int th = ceil(occ2 * allowance)+1;
         
@@ -38,10 +65,8 @@ int pattern_cmp(char *s1_pat, char *s2_pat, float allowance){
         fprintf(stderr, "%s\t%d\t%s\t%d\t%d\t%d\n", unit1, occ1, unit2, occ2, d, th);
         #endif
         
-        if(strcmp(unit1,unit2) == 0 && th < d ){
-        //if(strcmp(unit1,unit2) == 0 && occ_diff < d ){
-            match = 0; break;
-        }
+        if(rotate_match(unit1, strlen(unit1), unit2, strlen(unit2)) == 1 && th < d ){ match = 0; break; }
+        //if(strcmp(unit1,unit2) == 0 && th < d ){ match = 0; break; }
         diff1 -= strlen(s1_pat);
         diff2 -= strlen(s2_pat);
         
@@ -81,6 +106,7 @@ void ID2patterns(char *ID, char *s1_pat, char *s2_pat){
     if(detected_a_pattern == 0){
         strcpy(s1_pat, ""); strcpy(s2_pat, "");
     }
+
     // Replace < and > with ( and ), respectively.
     for(int j=0; j<strlen(s1_pat); j++)
         if(s1_pat[j]=='<' || s1_pat[j]=='(' || s1_pat[j]=='>' || s1_pat[j]==')' )  s1_pat[j]=' ';
@@ -88,7 +114,7 @@ void ID2patterns(char *ID, char *s1_pat, char *s2_pat){
         if(s2_pat[j]=='<' || s2_pat[j]=='(' || s2_pat[j]=='>' || s2_pat[j]==')' )  s2_pat[j]=' ';
 }
 
-
+//#define DEBUG_main
 int main(int argc, char *argv[])
 {
     int opt;
@@ -119,11 +145,15 @@ int main(int argc, char *argv[])
         if( fgets(s, BLK, fp) != NULL){
             if(s[0] == '>'){
                 sscanf(s, "> %[^\0]", s);
+                strcpy(s1_pat, ""); strcpy(s2_pat, "");
                 ID2patterns(s, s1_pat, s2_pat);
-                //printf("%s\t%s\t%s\n", s, s1_pat, s2_pat);
-                i++;
-                if(pattern_cmp(s1_pat,s2_pat,allowance) == 1)  j++;
-                
+                #ifdef DEBUG_main
+                printf("%s\t%s\t%s\n", s, s1_pat, s2_pat);
+                #endif
+                if(strcmp(s1_pat,"") != 0 && strcmp(s2_pat,"") != 0 ){
+                    i++;
+                    if(pattern_cmp(s1_pat,s2_pat,allowance) == 1)  j++;
+                }
             }else{
                 int k;
                 for(k=0; s[k]!='\0'; k++);

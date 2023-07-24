@@ -13,6 +13,9 @@ uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus infor
 
     > #Info (171,125,0.129) #Pat <CAG>19<CCG>38 #Decomp [2 (0,CCG,3,114,114) (1,AGC,3,57,57)] 
     CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAACAGCCGCCACCGCCGCCGCCGCCGCCGCCGCCTCCTCAGCTTCCTCAGCCGCCGCCGCAGGCACAGCCGCTGCTGCCTCAGCCGCAGCCGCCCCCGCCGCCGCCCCCCGCCGCCACC
+    
+Unit strings can be rotated to represent tandem repeating patterns. For example, in the example above, CAG can be replaced with AGC. Our program tries to output a tandem repeating pattern whose first character matches the input string. In the above case, the string starts with the letter C, so the first tandem repeat unit also starts with the letter C. However, if the input string starts with A and is AGCAGCAGC…, our program outputs \<AGC\>19.
+
 
 -l : Feed the locus information (e.g., chr8:118366813-118366928), which is added to the annotation of each string in the output fasta file with tag #Locus. For example:
 

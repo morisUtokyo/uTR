@@ -166,3 +166,12 @@ uTR [-sx] [-i output table file] [-p output a summary statistics with TR pattern
 -x : Output the above summary statistics to the standard output. 
 
 -h : Feed SNV information surrounding a input TR in a read; namely, a list of tuples of the form sampleID, readID, and a pair of SNV positions closest to the focal TR (e.g., 14882386|14883645, where two positions are separated by the bar "|"). For each read, the pair of nearest SNVs is put into the annotation of the read with tag #Hap.
+
+
+## Citation
+
+When using this software program, please cite:
+
+Masutani, Bansho, Kawahara, Riki & Morishita, Shinichi. Decomposing mosaic tandem repeats accurately from long reads. Bioinformatics 39, 1–6 (2023).
+
+https://academic.oup.com/bioinformatics/article/39/4/btad185/7114028

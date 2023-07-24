@@ -2,17 +2,17 @@
 The program uTR decomposes a DNA string into mosaic tandem repeats with different repeat units.
 
 ## Usage
-uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus information] [-u input representative unit string] [-r maximum discrepancy ratio] [-t] [-s]
+uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus information] [-u input representative unit string] [-r maximum dissimilarity ratio] [-t] [-s] [-y] [-z]
 
 -f : Feed a fasta file. For example:
 
-    > SAND12(control,BAFME)
-    AAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAATAAAATAAAATAAAATAAAATAAAATAAAATAAAAATGAACAAAA
+    > sample sequence
+    CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAACAGCCGCCACCGCCGCCGCCGCCGCCGCCGCCTCCTCAGCTTCCTCAGCCGCCGCCGCAGGCACAGCCGCTGCTGCCTCAGCCGCAGCCGCCCCCGCCGCCGCCCCCCGCCGCCACC
 
--o : Output the input fasta file annotated with a tandem repeat pattern identified. In the running example, the annotation contains "#Pat \<AAAAT\>23", which shows a tandem repeat pattern, and "#Info (116,1,0.06)", where 116 shows the length of the DNA string, 1 means the number of unit is 1, and 0.06 is the divergence between the tandem repeat pattern and the string:
+-o : Output the input fasta file annotated with a tandem repeat pattern identified. In the running example, the annotation contains "#Pat \<CAG\>19\<CCG\>38", which shows a tandem repeat pattern, and "#Info (171,125,0.129)", where 171 shows the length of the DNA string, 125 means the number of haplotypes detected is 1, and 0.129 is the dissimilarity ratio between the tandem repeat pattern and the string:
 
-    > #Info (116,1,0.06) #Pat <AAAAT>23 #Decomp [1 (0,AAAAT,5,116,116)] 
-    AAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAAAATAATAAAATAAAATAAAATAAAATAAAATAAAATAAAAATGAACAAAA    
+    > #Info (171,125,0.129) #Pat <CAG>19<CCG>38 #Decomp [2 (0,CCG,3,114,114) (1,AGC,3,57,57)] 
+    CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAACAGCCGCCACCGCCGCCGCCGCCGCCGCCGCCTCCTCAGCTTCCTCAGCCGCCGCCGCAGGCACAGCCGCTGCTGCCTCAGCCGCAGCCGCCCCCGCCGCCGCCCCCCGCCGCCACC
 
 -l : Feed the locus information (e.g., chr8:118366813-118366928), which is added to the annotation of each string in the output fasta file with tag #Locus. For example:
 
@@ -30,15 +30,51 @@ See the details of mTR:
     
 -a : Print the input annotation as it is
 
-    > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 #Decomp [2 (0,AAAG,4,116,116) (1,AG,2,50,50)] #Annotation <input annotation>
+    > #Info (171,125,0.129) #Pat <CAG>19<CCG>38 #Hap <(null)> #Decomp [2 (0,CCG,3,114,114) (1,AGC,3,57,57)] #Annotation <input annotation>
     
 -d : Do not print the decomposition. 
     
-    > #Info (166,10,0.01) #Pat <AAAG>6<AG>25<AAAG>23 
+    > #Info (171,125,0.129) #Pat <CAG>19<CCG>38
 
 -r : Give a maximum threshold on the mismatch ratio between the representaitve unit and a tandem repeat of the unit. No tandem repeat is output if the mismatch ratio exceeds this threshold. The default parameter is 0.3, which is set in uTR.h by:
 
     >#define MAX_DIS_RATIO_DEFAULT 0.3 
+    
+-y : Produce a more complex pattern with fewer mismatches, while the default mode outputs a simpler pattern with more mismatches. The background to providing this mode is Occam's Razor on how to generate better decompositions; that is, a trade-off between simpler patterns with more mismatches and more complex patterns with fewer mismatches. For example, given a string with complex tandem repeats:   
+
+    CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAACAGCCGCCACCGCCGCCGCCGCCGCCGCCGCCTCCTCAGCTTCCTCAGCCGCCGCCGCAGGCACAGCCGCTGCTGCCTCAGCCGCAGCCGCCCCCGCCGCCGCCCCCCGCCGCCACC
+    
+The default mode outputs a simple decomposition with a high dissimilarity rate of 12.9%.
+    
+    #Info (171,125,0.129) #Pat <CAG>19<CCG>38
+    
+Meanwhile, this mode “-y” produces a more complex decomposition with a smaller dissimilarity of 4.1%:
+    
+    #Info (171,125,0.041) #Pat <CAG>19<CCG>9<CCT>2<CAGCTTCCT>1<GCC>4<GCA>2<CCG>1<CTG>2<CCTC>1<AGCCGC>2<CCG>8
+    
+In the above decomposition, \<CAGCTTCCT\>1, \<CCG\>1, and \<CCTC\>1, whose subscripts are 1, are not repeats of units but are substrings in the given underlying string and fully match the string. These substrings are surrounded by repeat units; for example, \<CAGCTTCCT\>1 by \<CCT\>2 and \<GCC\>4.
+    
+-z: Output tandem repeat patterns with longer units. Two decompositions with shorter and longer units can match a given string with the same number of mismatches. For example, decompositions
+
+    <AG>3<CT>2<AG>3<CT>2<AG>3<CT>2 and <AGAGAGCTCT>3 
+    
+fully match string:
+
+    AGAGAGCTCTAGAGAGCTCTAGAGAGCTCT
+    
+“-z” prioritizes a decomposition with longer units, say \<AGAGAGCTCT\>3 in the above example. To implement this prioritization, our ptogram optimizes the alignment score minus the number of units in the decomposition. From the string example below, which is used in the mode “-y”:
+
+    CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAACAGCCGCCACCGCCGCCGCCGCCGCCGCCGCCTCCTCAGCTTCCTCAGCCGCCGCCGCAGGCACAGCCGCTGCTGCCTCAGCCGCAGCCGCCCCCGCCGCCGCCCCCCGCCGCCACC
+
+"-z" mode outputs
+
+    #Info (171,125,0.099) #Pat <CAG>20<CCG>10<CCGCAG>8<CCG>8
+    
+while the default mode outputs:
+
+    #Info (171,125,0.129) #Pat <CAG>19<CCG>38
+    
+Note that the former pattern with long unit CCGCAG matches the given string with a smaller dissimilarity rate than the latter pattern with short units.
 
 
 ## Simulated datasets to show the accuracy of the code

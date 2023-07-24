@@ -61,6 +61,7 @@ char *query_hap(char *individualID, int readID){
     return(NULL);
 }
 
+//#define DEBUG_main
 int main(int argc, char *argv[])
 {    
     char inputFile[500];    // For the input file name
@@ -81,14 +82,16 @@ int main(int argc, char *argv[])
     int regular_expression_only=0;  // Donot print decomposition
     int print_locus=0;
     int print_input_annotation_as_it_is=0;
-    int print_stdout_decomp = 0; 
+    int print_stdout_decomp = 0;
+    int mode_longer_TRs = 0;
+    int mode_smooth = 1;
 
     int opt;
     
     MAX_DIS_RATIO = MAX_DIS_RATIO_DEFAULT;
     float ratio;
     
-    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:p:stdax")) != -1) {
+    while ((opt = getopt(argc, argv, "l:f:u:h:o:i:r:p:stdaxyz")) != -1) {
         switch(opt){
             case 'l': strcpy(locus,optarg);       print_locus = 1;    break;
             case 'f': strcpy(inputFile,optarg);   inputFile_given = 1;    break;
@@ -103,8 +106,10 @@ int main(int argc, char *argv[])
             case 'd': regular_expression_only = 1; break;
             case 'a': print_input_annotation_as_it_is = 1; break;
             case 'x': print_stdout_decomp = 1; break;
+            case 'y': mode_smooth = 0; break;   // mode to avoid smoothing units
+            case 'z': mode_longer_TRs = 1; break;   // mode for finding longer TR units
             default:
-                fprintf(stderr, "Usage: uTR -l <locus info> -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (hide IDs) -d (print decomposition only) -a (for testing accuracy) -o <EDDC output file> -p <TR patterns>\n");
+                fprintf(stderr, "Usage: uTR -l <locus info> -f <fasta file> (-u <representative unit string> -h <haplotype file> -i <table file> -r <maximum discrepancy ratio> -t (print wall clock time) -s (print IDs) -d (do not print decomposition) -a (print the input annotation) -y (Print more complex patterns with fewer mismatches) -z (Print patterns with longer units) -o <EDDC output file> -p <TR patterns>\n");
                 exit(EXIT_FAILURE);
         }
     }
@@ -117,6 +122,7 @@ int main(int argc, char *argv[])
     gettimeofday(&s, NULL);
     float time_get_non_self_overlapping_prefixes = time_coverage_by_units = time_set_cover_greedy = 0;
     
+    int num_reads = count_reads(inputFile);
     FILE *fp = init_handle_one_file(inputFile);
     FILE *ofp;
     if(print_EDDC == 1) ofp = fopen(outputFile, "w"); else ofp = stdout;
@@ -127,7 +133,9 @@ int main(int argc, char *argv[])
     
     Read *currentRead = malloc(sizeof(Read));
     if(currentRead==NULL){ fprintf(stderr, "Failure to malloc currentRead\n"); exit(EXIT_FAILURE); }
-    malloc_Units(); malloc_GlobalVars();
+    malloc_Units(num_reads);
+    //malloc_Units();
+    malloc_GlobalVars();
     if(repUnit_given == 1)  put_repUnit(repUnit);
     for(int i=0; repUnit[i]!='\0'; i++, repUnitLen=i){}
     
@@ -140,24 +148,22 @@ int main(int argc, char *argv[])
     // Feed each read and make the database of units
     for(int i=0;;i++){
         return_one_read(fp, currentRead);
+#ifdef DEBUG_main
+        fprintf(stderr, "Scanned one read\n");
+#endif
         if(currentRead->len == 0) break;
         
-        for(int MIN_reps=2; 0 < MIN_reps; MIN_reps--){
+        int MIN_reps;
+        //if(mode_smooth == 1) MIN_reps=2; else MIN_reps=1;
+        for(MIN_reps=2; 0 < MIN_reps; MIN_reps--){
             if(MIN_reps == 2)
                 currentRead->mosaic_mode = Mosaic_tandem_repeat;
             else if(MIN_reps == 1)
                 currentRead->mosaic_mode = Mosaic_repeat;
-            // mosaic tandem repeats = 2, mosaic repeats = 1
-            clear_Units_incrementally();
-            // Set the set of units to the empty set
-            get_non_self_overlapping_prefixes(currentRead->string);
-            //for(int j=0; j<unit_cnt; j++) fprintf(stderr, "%s\n", Units[j].string);
-            // Put non-self-overlapping units into Units by calling nsop and put_unit.
-            coverage_by_units(currentRead->string, MIN_reps);
-            // Set Units[j].sumOccurrences to the tentative number of occurrences of each candidate unit by calling compute_sumOccurrences, count_occurrences (SA for short motifs), and count_occurrences_long_unit (DP for long motifs).
-            if(0 < unit_cnt)
-                set_cover_greedy(currentRead, MIN_reps); // Select TOP_k_units units in a batch manner and put them into prio2unit, a local array
+            
+            set_cover_greedy(currentRead, MIN_reps, mode_longer_TRs, mode_smooth); // Select TOP_k_units units in a batch manner and put them into prio2unit, a local array
             // The annotation starts with a space " " !!!
+        
             int numReads, diameter, radius, readlen;
             int return_sscanf = sscanf(currentRead->ID, " GroupSize = %d, Diameter = %d, RadiusFromCentroid = %d, CentroidReadName = %[^,],%[^,], CentroidReadLength = %d", &numReads, &diameter, &radius, individualID, readID, &readlen);
             if(return_sscanf == 0){
@@ -172,10 +178,10 @@ int main(int argc, char *argv[])
                 numQualifiedReads++;
                 
                 if(hide_IDs == 0)
-                    sprintf(stat, "(%s,%s,%d,%d,%d,%3.2f)", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
+                    sprintf(stat, "(%s,%s,%d,%d,%d,%4.3f)", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
                 else
-                    sprintf(stat, "(%d,%d,%3.2f)", currentRead->len, numReads, currentRead->discrepancy_ratio);
-                sprintf(stat_table, "%s,%s (%d,%d,%d,%3.2f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
+                    sprintf(stat, "(%d,%d,%4.3f)", currentRead->len, numReads, currentRead->discrepancy_ratio);
+                sprintf(stat_table, "%s,%s (%d,%d,%d,%4.3f) ", individualID, readID, currentRead->len, numReads, currentRead->numKeyUnits, currentRead->discrepancy_ratio);
                 
                 if(print_table == 1){
                     fprintf(tfp, "%s", stat_table);
@@ -236,7 +242,8 @@ int main(int argc, char *argv[])
             if(print_stdout_decomp == 1){
                 printf("(%s,%d) ", GlobalUnits[i].string, GlobalUnits[i].sumOccurrences);
             }
-            if(print_EDDC == 1 && print_input_annotation_as_it_is == 0){ // Print primary units for EDDC algorithm unless the mode of testing accuracy
+            if(print_EDDC == 1){ // Print primary units for EDDC algorithm
+            //if(print_EDDC == 1 && print_input_annotation_as_it_is == 0){ // Print primary units for EDDC algorithm unless the mode of testing accuracy
                 fprintf(ofp, ">");
                 if(print_locus == 1)    fprintf(ofp, "#Locus %s", locus);
                 fprintf(ofp, " frequent unit. freq. = %d\n%s\n", GlobalUnits[i].sumOccurrences, GlobalUnits[i].string);

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <sys/time.h>
 #include <math.h>
+#include <string.h>
 #include "uTR.h"
 
 char int2char(int i){
@@ -236,11 +237,15 @@ void randomQuickSort3(int* target, int* Pos, int aLeft, int aRight) {
     }
 }
 
-//#define DEBUG_batch_selection
-int unit_selection(int string_len, int *prio2unit, int MIN_number_repetitions){
-
-    MIN_number_repetitions = 1;
+//#define DEBUG_batch_selection  // Print units selected
+int unit_selection(Read *currentRead, int *prio2unit, int MIN_number_repetitions, int longer_unit_mode){
     
+    for(int j=0; j<unit_cnt; j++) Units[j].prio = UNDEFINED;
+    
+    int string_len;     // string_len is the length of the string.
+    for(string_len=0; currentRead->string[string_len]!='\0'; string_len++){}
+    
+    //MIN_number_repetitions = 1;
     int *tmpCovered = (int *) malloc(sizeof(int)*(string_len+1));
     for(int i=0; i<string_len+1; i++) tmpCovered[i] = 0;
     int *listPenalty = (int *) malloc(sizeof(int)*unit_cnt);
@@ -253,94 +258,189 @@ int unit_selection(int string_len, int *prio2unit, int MIN_number_repetitions){
         listPenalty[j]   = penalty;
         listUnitInd[j]   = j;
     }
-    randomQuickSort3(listPenalty, listUnitInd, 0, unit_cnt-1); // Sort units according to tentative penalty
     #ifdef  DEBUG_batch_selection
-    for(int p=0; p<TOP_k_units; p++)
-        fprintf(stderr, "%d\t%s\n", listPenalty[p], Units[listUnitInd[p]].string);
-    fprintf(stderr, "\n");
+    fprintf(stderr, "unit_cnt=%d\n", unit_cnt);
     #endif
-
-    // greedy selection of units
-    //MIN_number_repetitions = 1;
-    int k = MIN(TOP_k_units, unit_cnt);
-    for(int i=0; i<string_len+1; i++) tmpCovered[i] = 0; // Initialize tmpCovered
-    int prev_cum_cnt = 0; // max of cumulative count
-    int min_penalty = string_len;
-    int numKeyUnits=0;
-    for(int prio=0; prio<k; prio++){ // 0-origin
-        // Compute an optimal unit that minimizes the penalty.
-        int min_penalty_unit = UNDEFINED;
-        for(int j=0; j<k; j++){
-            int unitIndex = listUnitInd[j];
-            if(Units[unitIndex].prio == UNDEFINED){
-                //Setting the last arg to 0 untouches tmpCovered
-                int tmp_cum_cnt = cumulative_count(string_len, tmpCovered, unitIndex, MIN_number_repetitions, 0);
-                int tmp_penalty = min_penalty + (Units[unitIndex].len + (tmp_cum_cnt - prev_cum_cnt) / Units[unitIndex].len) - (tmp_cum_cnt - prev_cum_cnt); // The second is the penalty of the tentatively added unit, and the last is the decrease of uncovered bases by the added unit
-                #ifdef  DEBUG_batch_selection
-                fprintf(stderr, "%d\t%d\t%s\n", min_penalty, tmp_penalty, Units[unitIndex].string);
-                #endif
-                if(tmp_penalty <= min_penalty){ // Include two occurrences of a 2bp unit
-                    min_penalty = tmp_penalty;
-                    prev_cum_cnt = tmp_cum_cnt;
-                    min_penalty_unit = unitIndex;
+    
+    randomQuickSort3(listPenalty, listUnitInd, 0, unit_cnt-1); // Sort units according to tentative penalty
+    
+    int numKeyUnits;
+    if(longer_unit_mode == 1){
+        // Use top k units as they are
+        numKeyUnits = MIN(TOP_k_units, unit_cnt);
+        for(int p=0; p<numKeyUnits; p++)
+            prio2unit[p] = listUnitInd[p];
+        
+        #ifdef  DEBUG_batch_selection
+        fprintf(stderr, "\nCandidate of units (numKeyUnits=%d)\n", numKeyUnits);
+        for(int p=0; p<numKeyUnits; p++)
+            fprintf(stderr, "%d\t%s\n", listPenalty[p], Units[listUnitInd[p]].string);
+        #endif
+    }else{
+        // greedy selection of units
+        int k = MIN(TOP_k_units, unit_cnt);
+        for(int i=0; i<string_len+1; i++) tmpCovered[i] = 0; // Initialize tmpCovered
+        int prev_cum_cnt = 0; // max of cumulative count
+        int min_penalty = string_len;   // Set min_penalty a large value
+        numKeyUnits=0;
+        for(int prio=0; prio<k; prio++){ // 0-origin
+            // Compute an optimal unit that minimizes the penalty.
+            int min_penalty_unit = UNDEFINED;
+            for(int j=0; j<k; j++){
+                int unitIndex = listUnitInd[j];
+                if(Units[unitIndex].prio == UNDEFINED){
+                    //Setting the last arg to 0 untouches tmpCovered
+                    int tmp_cum_cnt = cumulative_count(string_len, tmpCovered, unitIndex, MIN_number_repetitions, 0);
+                    int tmp_penalty = min_penalty + (Units[unitIndex].len + (tmp_cum_cnt - prev_cum_cnt) / Units[unitIndex].len) - (tmp_cum_cnt - prev_cum_cnt); // The second is the penalty of the tentatively added unit, and the last is the decrease of uncovered bases by the added unit
+                    #ifdef  DEBUG_batch_selection
+                    fprintf(stderr, "%s\tunitIndex=%d\ttmp_cum_cnt=%d\ttmp_penalty=%d\tmin_penalty=%d\n", Units[unitIndex].string, unitIndex, tmp_cum_cnt, tmp_penalty, min_penalty);
+                    //for(int x=0; x<string_len; x++) fprintf(stderr, "%d", tmpCovered[x]);
+                    //fprintf(stderr, "\n");
+                    #endif
+                    if(tmp_penalty <= min_penalty){ // Include two occurrences of a 2bp unit
+                        min_penalty = tmp_penalty;
+                        prev_cum_cnt = tmp_cum_cnt;
+                        min_penalty_unit = unitIndex;
+                    }
                 }
             }
-        }
-
-        // After computing an optimal unit that minimizes the penalty.
-        if(min_penalty_unit == UNDEFINED) // No units with the min penalty
-            break;
-        else{
-            #ifdef  DEBUG_batch_selection
-            fprintf(stderr, "---min_penalty\t\t%d\t%s\n", min_penalty, Units[min_penalty_unit].string);
-            #endif
-            Units[min_penalty_unit].prio = prio;
-            prio2unit[prio] = min_penalty_unit; // Setting the last arg to prio(>=0) updates tmpCovered and sumOccurrences of the optimal unit. The last argument prio is set to -1 when we test whether the unit is optimal one or not.
-            cumulative_count(string_len, tmpCovered, min_penalty_unit, MIN_number_repetitions, prio+1);
-            numKeyUnits = prio+1;  // i is the 0-origin indexing
+            
+            // After computing an optimal unit that minimizes the penalty.
+            if(min_penalty_unit == UNDEFINED) // No units with the min penalty
+                break;
+            else{
+                #ifdef  DEBUG_batch_selection
+                fprintf(stderr, "---min_penalty\t\t%d\t%s\n", min_penalty, Units[min_penalty_unit].string);
+                #endif
+                Units[min_penalty_unit].prio = prio;
+                prio2unit[prio] = min_penalty_unit; // Setting the last arg to prio(>=0) updates tmpCovered and sumOccurrences of the optimal unit. The last argument prio is set to -1 when we test whether the unit is optimal one or not.
+                cumulative_count(string_len, tmpCovered, min_penalty_unit, MIN_number_repetitions, prio+1);
+                numKeyUnits = prio+1;  // i is the 0-origin indexing
+            }
         }
     }
     free(tmpCovered);
     free(listPenalty);
     free(listUnitInd);
+    currentRead->numKeyUnits = numKeyUnits;
     return(numKeyUnits);
 }
 
-#define DEBUG_set_cover_greedy
 
-void set_cover_greedy(Read *currentRead, int MIN_number_repetitions){
+void copy_Read(Read *a, Read *b){
+    a->len = b->len;
+    strcpy(a->string, b->string);
+    for(int i=0; i < b->len; i++)
+        a->intString[i] = b->intString[i];
+    strcpy(a->ID, b->ID);
+    a->numKeyUnits = b->numKeyUnits;
+    a->mosaic_mode = b->mosaic_mode;
+    a->sumTandem = b->sumTandem;
+    a->discrepancy_ratio = b->discrepancy_ratio;
+    a->mismatch_ratio  = b->mismatch_ratio;
+    a->deletion_ratio  = b->deletion_ratio;
+    a->insertion_ratio = b->insertion_ratio;
+    strcpy(a->RegExpression, b->RegExpression);
+    a->RegExpressionDecomp = b->RegExpressionDecomp;
+    strcpy(a->decomposition, b->decomposition);
+}
+
+void set_cover_greedy_prep(Read *currentRead, int MIN_number_repetitions)
+{
+    clear_Units_incrementally();
+    for(int j=0; j<unit_cnt; j++) Units[j].prio = UNDEFINED;
+    // Set the set of units to the empty set
+    get_non_self_overlapping_prefixes(currentRead->string);
+    //for(int j=0; j<unit_cnt; j++) fprintf(stderr, "%s\n", Units[j].string);
+    // Put non-self-overlapping units into Units by calling nsop and put_unit.
+    coverage_by_units(currentRead->string, MIN_number_repetitions);
+    // Set Units[j].sumOccurrences to the tentative number of occurrences of each candidate unit by calling compute_sumOccurrences, count_occurrences (SA for short motifs), and count_occurrences_long_unit (DP for long motifs).
+}
+
+
+//#define DEBUG_set_cover_greedy
+void set_cover_greedy(Read *currentRead, int MIN_number_repetitions, int mode_longer_TRs, int mode_smooth){
     // Solve the set cover problem in a greedy manner
     struct timeval s, e;    gettimeofday(&s, NULL);
     
-    for(int j=0; j<unit_cnt; j++) Units[j].prio = UNDEFINED;
     int prio2unit[TOP_k_units+1];
-    int n;  for(n=0; currentRead->string[n]!='\0'; n++){} // n is the length of the string.
-
     int numKeyUnits;
-    numKeyUnits = unit_selection(n, prio2unit, MIN_number_repetitions);
+    //int mode_smooth = 1;
     
-    // Call string decomposer, Copy key units to allocated arrays
-    currentRead->numKeyUnits = numKeyUnits;
-    if(numKeyUnits == 0) return;
-
-    string_decomposer(currentRead, numKeyUnits, prio2unit, MIN_number_repetitions, 1);
-    
-    // Compute major key units that occupy MIN_COVERAGE
-    int sumLen=0;
-    int revised_numKeyUnits;
-    for(int p=numKeyUnits-1; 0<=p; p--){
-        sumLen += Units[prio2unit[p]].sumOccurrences;
-        if( currentRead->len * MIN_COVERAGE < sumLen){
-            revised_numKeyUnits = numKeyUnits - p;
-            break;
+    Read *shortUnitRead = malloc(sizeof(Read));
+    Read *longUnitRead = malloc(sizeof(Read));
+        
+    #ifdef DEBUG_set_cover_greedy
+    fprintf(stderr, "\nID:  \t%s\n", currentRead->ID);
+    #endif
+    if(mode_longer_TRs == 1){
+        // Mode of computing longer units
+        copy_Read(longUnitRead, currentRead);
+        set_cover_greedy_prep(longUnitRead, MIN_number_repetitions);
+        numKeyUnits = unit_selection(longUnitRead, prio2unit, MIN_number_repetitions, 1); // 1=long read mode!!
+        if(numKeyUnits == 0){
+            longUnitRead->discrepancy_ratio = 1;
+            #ifdef DEBUG_set_cover_greedy
+            fprintf(stderr, "long:\tnumKeyUnits == 0\n");
+            #endif
+        }else{
+            string_decomposer(longUnitRead, numKeyUnits, prio2unit, MIN_number_repetitions, mode_smooth, 1); // 1=long read mode!!
+            #ifdef DEBUG_set_cover_greedy
+            fprintf(stderr, "long:\t%s\t%f\t%f\t%f\t%f\n", longUnitRead->RegExpression, longUnitRead->discrepancy_ratio, longUnitRead->mismatch_ratio, longUnitRead->deletion_ratio, longUnitRead->insertion_ratio);
+            #endif
         }
     }
-    // Revise prio2unit
-    for(int j=0, i=numKeyUnits-revised_numKeyUnits; j<revised_numKeyUnits; j++, i++)
-        prio2unit[j] = prio2unit[i];
+
+    // Mode of computing shorter units
+    copy_Read(shortUnitRead, currentRead);
+    set_cover_greedy_prep(shortUnitRead, MIN_number_repetitions);
+    numKeyUnits = unit_selection(shortUnitRead, prio2unit, MIN_number_repetitions, 0); // 0 = shorter read mode!!
+    if(numKeyUnits == 0){
+        shortUnitRead->discrepancy_ratio = 1;
+        #ifdef DEBUG_set_cover_greedy
+        fprintf(stderr, "short:\tnumKeyUnits == 0\n");
+        #endif
+        //free(shortUnitRead); free(longUnitRead); return;
+    }else{
+        string_decomposer(shortUnitRead, numKeyUnits, prio2unit, MIN_number_repetitions, mode_smooth, 0); // 0 = shorter read mode!!
+        // Compute major key units that occupy MIN_COVERAGE
+        int sumLen=0;
+        int revised_numKeyUnits;
+        for(int p=numKeyUnits-1; 0<=p; p--){
+            sumLen += Units[prio2unit[p]].sumOccurrences;
+            if( shortUnitRead->len * MIN_COVERAGE < sumLen){
+                revised_numKeyUnits = numKeyUnits - p;
+                break;
+            }
+        }
+        // Revise prio2unit and redo the string decomposer
+        for(int j=0, i=numKeyUnits-revised_numKeyUnits; j<revised_numKeyUnits; j++, i++)
+            prio2unit[j] = prio2unit[i];
+        numKeyUnits = revised_numKeyUnits;
+        string_decomposer(shortUnitRead, numKeyUnits, prio2unit, MIN_number_repetitions, mode_smooth, 0);
+        #ifdef DEBUG_set_cover_greedy
+        fprintf(stderr, "short:\t%s\t%f\t%f\t%f\t%f\n", shortUnitRead->RegExpression, shortUnitRead->discrepancy_ratio, shortUnitRead->mismatch_ratio, shortUnitRead->deletion_ratio, shortUnitRead->insertion_ratio);
+        #endif
+    }
+
+    if(mode_longer_TRs == 1){
+        if(shortUnitRead->discrepancy_ratio <= longUnitRead->discrepancy_ratio){
+            copy_Read(currentRead, shortUnitRead);
+            #ifdef DEBUG_set_cover_greedy
+            fprintf(stderr, "shorter was selected\n");
+            #endif
+        }else{
+            copy_Read(currentRead, longUnitRead);
+            #ifdef DEBUG_set_cover_greedy
+            fprintf(stderr, "longer was selected\n");
+            #endif
+        }
+    }else{
+        copy_Read(currentRead, shortUnitRead);
+    }
     
-    numKeyUnits = revised_numKeyUnits;
-    string_decomposer(currentRead, numKeyUnits, prio2unit, MIN_number_repetitions, 1);
+    free(shortUnitRead);
+    free(longUnitRead);
     
     gettimeofday(&e, NULL);
     time_set_cover_greedy += (e.tv_sec - s.tv_sec) + (e.tv_usec - s.tv_usec)*1.0E-6;

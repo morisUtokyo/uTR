@@ -44,7 +44,8 @@ void clear_Units_incrementally(){
     }
 }
 
-void malloc_Units(){
+void malloc_Units(int num_reads){
+//void malloc_Units(){
     unit_cnt = 0;
     
     Units = (Unit *) malloc( sizeof(Unit) * MAX_NUMBER_UNITS);
@@ -53,11 +54,17 @@ void malloc_Units(){
         Units[i].sumOccurrences = 0;
     
     keyUnits = (Unit *) malloc( sizeof(Unit) * TOP_k_units);
-    if(keyUnits == NULL)
-    { fprintf(stderr, "Failure to malloc keyUnits(=%d)\n", TOP_k_units); exit(EXIT_FAILURE); }
+    if(keyUnits == NULL){
+        fprintf(stderr, "Failure to malloc keyUnits(=%d)\n", TOP_k_units);
+        exit(EXIT_FAILURE);
+    }
     
-    Qreads = (QualifiedRead *) malloc( sizeof(QualifiedRead) * MAX_NUMBER_READS);
-    if(Qreads == NULL) exit(EXIT_FAILURE);
+    Qreads = (QualifiedRead *) malloc( sizeof(QualifiedRead) * num_reads);
+    //Qreads = (QualifiedRead *) malloc( sizeof(QualifiedRead) * MAX_NUMBER_READS);
+    if(Qreads == NULL){
+        fprintf(stderr, "The number of reads in the input fasta file, %d, is too large.\n", num_reads);
+        exit(EXIT_FAILURE);
+    }
     #ifdef DEBUG_feed
     fprintf(stderr, "Succeeded in malooc (handle_one_file.c)\n");
     #endif
@@ -108,6 +115,21 @@ char capitalize(char c){
             fprintf(stderr, "Invalid character: %c in capitalize\n", c); exit(EXIT_FAILURE);
     }
     return(charCode);
+}
+
+int count_reads(char *inputFile){
+    FILE *fp = fopen(inputFile, "r");
+    if(fp == NULL){
+        fprintf(stderr, "fatal error: cannot open %s\n", inputFile);
+        fflush(stderr);
+        exit(EXIT_FAILURE);
+    }
+    char s[BLK+1];
+    int cnt = 0;
+    while (fgets(s, BLK, fp) != NULL)
+        if(s[0] == '>') cnt++;
+    fclose(fp);
+    return(cnt);
 }
 
 FILE* init_handle_one_file(char *inputFile){

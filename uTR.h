@@ -38,11 +38,11 @@ float MAX_DIS_RATIO;
 //#define MIN_unit_occupancy_ratio  0.8 // 0.6
 // We discarded this parameter. Instead, we search for a set of units that minimizes the penalty.
 #define MIN_unit_length 2
-#define TOP_k_units 5       // Print top k units for debugging
+#define TOP_k_units  5      // Print top k units for debugging
 #define MIN_COVERAGE 0.95   // Minimum coverage of a TR by key units
 
 // Internal variables and data structures
-#define MAX_NUMBER_READS    10000
+#define MAX_NUMBER_READS    10000   // Not used as of 5/7/2023 as the number of reads is calculated.
 #define MAX_READ_LENGTH     20000 //100000
 #define MAX_ID_LENGTH       1000
 #define BLK 4096
@@ -65,6 +65,12 @@ char *nextReadID;
 #define Mosaic_tandem_repeat 0
 #define Mosaic_repeat 1
 #define UNDEFINED -1
+
+// Parameters for wrap_around_DP and string_decomposer
+#define MATCH_GAIN          1
+#define MISMATCH_PENALTY    1
+#define INDEL_PENALTY       1
+#define unit_PENALTY        1
 
 typedef struct{
     int len;
@@ -129,10 +135,12 @@ int  global_unit_cnt;
 #define WrapDPsize  200000000    // 2*10^8 (200M)  = repeat_unit_size (200) x 100 units x length_of_repeats (10,000)
 int *WrapDP;            // 2D space for Wrap-around global alignment DP for handling tandem repeats
 
+int     count_reads(char *inputFile);
 FILE*   init_handle_one_file(char *inputFile);
 void    return_one_read(FILE *fp, Read *currentRead);
 
-void    malloc_Units();
+void    malloc_Units(int num_reads);
+//void    malloc_Units();
 void    free_Units();
 void    clear_Units_incrementally();
 
@@ -147,9 +155,10 @@ void    put_repUnit(char *repUnit);
 void    SA_IS(unsigned char *s, int *SA, int n, int K, int cs);
 
 void    coverage_by_units(char *S, int MIN_number_repetitions);
-void    set_cover_greedy(Read *currentRead, int MIN_number_repetitions);
+void set_cover_greedy(Read *currentRead, int MIN_number_repetitions, int mode_longer_TRs, int mode_smooth);
 
-void    string_decomposer(Read *currentRead, int numKeyUnits, int *prio2unit, int MIN_number_repetitions, int smooth_mode);
+int wrap_around_DP(char *rep_unit, char *rep, int *t_mat, int *t_mis, int *t_ins, int *t_del);
+void    string_decomposer(Read *currentRead, int numKeyUnits, int *prio2unit, int MIN_number_repetitions, int smooth_mode, int longer_unit_mode);
 
 void    randomQuickSort3(int* target, int* Pos, int aLeft, int aRight);
 
@@ -183,6 +192,7 @@ extern "C" {
 #define DIFF(x, y) ((x) > (y) ? ((x) - (y)) : ((y) - (x)))
 
 // Debug Mode
+//#define DEBUG_longer_units
 //#define DEBUG_EDDC_mode  // Show the frequency of each init.
 
 

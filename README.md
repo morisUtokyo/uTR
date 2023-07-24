@@ -9,7 +9,7 @@ uTR [-f input fasta file] [-o output fasta file with annotation] [-l locus infor
     > sample sequence
     CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAACAGCCGCCACCGCCGCCGCCGCCGCCGCCGCCTCCTCAGCTTCCTCAGCCGCCGCCGCAGGCACAGCCGCTGCTGCCTCAGCCGCAGCCGCCCCCGCCGCCGCCCCCCGCCGCCACC
 
--o : Output the input fasta file annotated with a tandem repeat pattern identified. In the running example, the annotation contains "#Pat \<CAG\>19\<CCG\>38", which shows a tandem repeat pattern, and "#Info (171,125,0.129)", where 171 shows the length of the DNA string, 125 means the number of haplotypes detected is 1, and 0.129 is the dissimilarity ratio between the tandem repeat pattern and the string:
+-o : Output the input fasta file annotated with a tandem repeat pattern identified. In the running example, the annotation contains "#Pat \<CAG\>19\<CCG\>38", which shows a tandem repeat pattern, and "#Info (171,125,0.129)", where 171 shows the length of the DNA string, 125 means the number of haplotypes detected, and 0.129 is the dissimilarity ratio between the tandem repeat pattern and the string:
 
     > #Info (171,125,0.129) #Pat <CAG>19<CCG>38 #Decomp [2 (0,CCG,3,114,114) (1,AGC,3,57,57)] 
     CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAACAGCCGCCACCGCCGCCGCCGCCGCCGCCGCCTCCTCAGCTTCCTCAGCCGCCGCCGCAGGCACAGCCGCTGCTGCCTCAGCCGCAGCCGCCCCCGCCGCCGCCCCCCGCCGCCACC

@@ -54,7 +54,7 @@ Meanwhile, this mode “-y” produces a more complex decomposition with a small
     
 In the above decomposition, \<CAGCTTCCT\>1, \<CCG\>1, and \<CCTC\>1, whose subscripts are 1, are not repeats of units but are substrings in the given underlying string and fully match the string. These substrings are surrounded by repeat units; for example, \<CAGCTTCCT\>1 by \<CCT\>2 and \<GCC\>4.
     
--z: Output tandem repeat patterns with longer units. Two decompositions with shorter and longer units can match a given string with the same number of mismatches. For example, decompositions
+-z : Output tandem repeat patterns with longer units. Two decompositions with shorter and longer units can match a given string with the same number of mismatches. For example, decompositions
 
     <AG>3<CT>2<AG>3<CT>2<AG>3<CT>2 and <AGAGAGCTCT>3 
     
@@ -62,7 +62,7 @@ fully match string:
 
     AGAGAGCTCTAGAGAGCTCTAGAGAGCTCT
     
-“-z” prioritizes a decomposition with longer units, say \<AGAGAGCTCT\>3 in the above example. To implement this prioritization, our ptogram optimizes the alignment score minus the number of units in the decomposition. From the string example below, which is used in the mode “-y”:
+“-z” prioritizes a decomposition with longer units, say \<AGAGAGCTCT\>3 in the above example. To implement this prioritization, our program optimizes the alignment score minus the number of units in the decomposition. From the string example below, which is used in the mode “-y”:
 
     CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAACAGCCGCCACCGCCGCCGCCGCCGCCGCCGCCTCCTCAGCTTCCTCAGCCGCCGCCGCAGGCACAGCCGCTGCTGCCTCAGCCGCAGCCGCCCCCGCCGCCGCCCCCCGCCGCCACC
 

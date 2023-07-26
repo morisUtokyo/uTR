@@ -158,12 +158,14 @@ uTR [-sx] [-i output table file] [-p output a summary statistics with TR pattern
 -i : Output a table file in which each line shows, for example: 
 
     nID,read1 (166,10,2,0.01) [2 (0,AAAG,4,116,116) (1,AG,2,50,50)]
+
+-x : Output the following summary statistics to the standard output. 
+
+    #haplotypes=100 (ID1,read1,245,80,2,0.18) [2 (0,CCG,3,221,221) (1,GT,2,24,24)] (ID2,read3,248,43,2,0.18) [2 (0,CCG,3,224,224) (1,GT,2,24,24)] ...
     
 -p : Output a summary statistics with tandem repeat patterns to the file name following "-p". It begins with the number of haplotypes with different tandem repeats and shows a list of tandem repeat patterns. For example, 
 
     #haplotypes=1000 (166,10,0.01) <AAAG>6<AG>25<AAAG>23 ...
-    
--x : Output the above summary statistics to the standard output. 
 
 -h : Feed SNV information surrounding a input TR in a read; namely, a list of tuples of the form sampleID, readID, and a pair of SNV positions closest to the focal TR (e.g., 14882386|14883645, where two positions are separated by the bar "|"). For each read, the pair of nearest SNVs is put into the annotation of the read with tag #Hap.
 
